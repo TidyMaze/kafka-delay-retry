@@ -116,7 +116,8 @@ func main() {
 	remaining := p.Flush(1000)
 	fmt.Printf("%d messages remaining in producer queue\n", remaining)
 
-	// wait 10 seconds for all messages to be delivered
+	// show why we are sleeping
+	fmt.Println("Sleeping for 10 seconds")
 	time.Sleep(10 * time.Second)
 
 	// show end of program
