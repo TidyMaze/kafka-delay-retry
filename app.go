@@ -117,6 +117,8 @@ func main() {
 		if err != nil {
 			fmt.Printf("Delivery failed: %v\n", err)
 		}
+		// sleep 500ms to simulate a delay
+		time.Sleep(500 * time.Millisecond)
 	}
 	// show end of producer
 	fmt.Println("End of producer")
