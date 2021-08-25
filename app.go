@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"runtime"
-	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"gorm.io/driver/sqlite"
@@ -65,7 +64,7 @@ func main() {
 		panic(err)
 	}
 
-	// defer c.Close()
+	defer c.Close()
 
 	c.SubscribeTopics([]string{topic}, nil)
 
@@ -89,6 +88,4 @@ func main() {
 			Value:          []byte(fmt.Sprintf("-test%d", i))}, nil)
 	}
 	p.Flush(10000)
-
-	time.Sleep(30 * time.Second)
 }
