@@ -18,7 +18,7 @@ type Product struct {
 
 func main() {
 	// print current GOMAXPROCS from runtime
-	fmt.Printf("NumCPU: %d\n", runtime.NumCPU())
+	fmt.Printf("GOMAXPROCS: %d\n", runtime.GOMAXPROCS(0))
 
 	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
 	if err != nil {
@@ -45,7 +45,8 @@ func main() {
 
 	p, err := kafka.NewProducer(&kafka.ConfigMap{
 		"bootstrap.servers": "localhost:29092",
-		"client.id":         "test"})
+		"client.id":         "test",
+	})
 
 	if err != nil {
 		fmt.Printf("Failed to create producer: %s\n", err)
@@ -78,20 +79,29 @@ func main() {
 				// The client will automatically try to recover from all errors.
 				fmt.Printf("Consumer error: %v (%v)\n", err, msg)
 			}
-			c.CommitMessage(msg)
+			partition, error := c.CommitMessage(msg)
+			if error != nil {
+				fmt.Printf("Commit error: %v (%v)\n", error, msg)
+			} else {
+				// show committed offset
+				fmt.Printf("Committed offset %v\n", partition)
+			}
 		}
 	}()
 
+	delivery_chan := make(chan kafka.Event, 10000)
+
 	// produce all numbers from 10 to 20 to kafka topic, prefixed by '-test'
-	for i := 10; i <= 1000; i++ {
+	for i := 0; i < 10; i++ {
 		err := p.Produce(&kafka.Message{
 			TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
-			Value:          []byte(fmt.Sprintf("%d-test", i))}, nil)
+			Value:          []byte(fmt.Sprintf("%d-test", i))}, delivery_chan)
 
 		if err != nil {
 			fmt.Printf("Delivery failed: %v\n", err)
 		}
 	}
-	remaining := p.Flush(10000)
+
+	remaining := p.Flush(1000)
 	fmt.Printf("%d messages remaining in producer queue\n", remaining)
 }
