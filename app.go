@@ -1,6 +1,11 @@
 package main
 
 import (
+	"fmt"
+	"os"
+	"strconv"
+
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -32,4 +37,48 @@ func main() {
 	// db.Model(&product).Updates(map[string]interface{}{"Price": 200, "Code": "F42"})
 
 	db.Delete(&product, 1)
+
+	topic := "test"
+
+	p, err := kafka.NewProducer(&kafka.ConfigMap{
+		"bootstrap.servers": "localhost",
+		"client.id":         "test",
+		"acks":              "all"})
+
+	if err != nil {
+		fmt.Printf("Failed to create producer: %s\n", err)
+		os.Exit(1)
+	}
+
+	for i := 0; i < 100; i++ {
+		p.Produce(&kafka.Message{
+			TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
+			Value:          []byte(strconv.Itoa(i))}, nil)
+	}
+
+	c, err := kafka.NewConsumer(&kafka.ConfigMap{
+		"bootstrap.servers": "localhost",
+		"group.id":          "kafka-delay-retry",
+		"auto.offset.reset": "earliest",
+	})
+
+	if err != nil {
+		panic(err)
+	}
+
+	c.SubscribeTopics([]string{topic}, nil)
+
+	for {
+		msg, err := c.ReadMessage(-1)
+		if err == nil {
+			fmt.Printf("Message on %s: %s\n", msg.TopicPartition, string(msg.Value))
+		} else {
+			// The client will automatically try to recover from all errors.
+			fmt.Printf("Consumer error: %v (%v)\n", err, msg)
+		}
+	}
+
+	c.Close()
+
+	p.Close()
 }
