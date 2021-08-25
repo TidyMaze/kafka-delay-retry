@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"runtime"
+	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"gorm.io/driver/sqlite"
@@ -16,6 +18,9 @@ type Product struct {
 }
 
 func main() {
+	// print current GOMAXPROCS from runtime
+	fmt.Printf("NumCPU: %d\n", runtime.NumCPU())
+
 	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
@@ -61,7 +66,7 @@ func main() {
 		panic(err)
 	}
 
-	defer c.Close()
+	// defer c.Close()
 
 	c.SubscribeTopics([]string{topic}, nil)
 
@@ -74,6 +79,7 @@ func main() {
 				// The client will automatically try to recover from all errors.
 				fmt.Printf("Consumer error: %v (%v)\n", err, msg)
 			}
+			c.Commit()
 		}
 	}()
 
@@ -82,5 +88,8 @@ func main() {
 		p.Produce(&kafka.Message{
 			TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
 			Value:          []byte(fmt.Sprintf("-test%d", i))}, nil)
+		p.Flush(10)
 	}
+
+	time.Sleep(5 * time.Second)
 }
