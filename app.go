@@ -49,6 +49,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	defer p.Close()
+
 	// produce all numbers from 10 to 20 to kafka topic, prefixed by '-test'
 	for i := 10; i <= 20; i++ {
 		p.Produce(&kafka.Message{
@@ -68,6 +70,8 @@ func main() {
 
 	c.SubscribeTopics([]string{topic}, nil)
 
+	defer c.Close()
+
 	for {
 		msg, err := c.ReadMessage(-1)
 		if err == nil {
@@ -77,8 +81,4 @@ func main() {
 			fmt.Printf("Consumer error: %v (%v)\n", err, msg)
 		}
 	}
-
-	c.Close()
-
-	p.Close()
 }
