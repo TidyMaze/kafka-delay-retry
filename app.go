@@ -55,9 +55,10 @@ func main() {
 	defer p.Close()
 
 	c, err := kafka.NewConsumer(&kafka.ConfigMap{
-		"bootstrap.servers": "localhost:29092",
-		"group.id":          "kafka-delay-retry",
-		"auto.offset.reset": "earliest",
+		"bootstrap.servers":  "localhost:29092",
+		"group.id":           "kafka-delay-retry",
+		"auto.offset.reset":  "earliest",
+		"enable.auto.commit": "false",
 	})
 
 	if err != nil {
@@ -83,9 +84,14 @@ func main() {
 
 	// produce all numbers from 10 to 20 to kafka topic, prefixed by '-test'
 	for i := 10; i <= 1000; i++ {
-		p.Produce(&kafka.Message{
+		err := p.Produce(&kafka.Message{
 			TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
-			Value:          []byte(fmt.Sprintf("-test%d", i))}, nil)
+			Value:          []byte(fmt.Sprintf("%d-test", i))}, nil)
+
+		if err != nil {
+			fmt.Printf("Delivery failed: %v\n", err)
+		}
 	}
-	p.Flush(10000)
+	remaining := p.Flush(10000)
+	fmt.Printf("%d messages remaining in producer queue\n", remaining)
 }
