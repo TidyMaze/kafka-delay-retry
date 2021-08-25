@@ -40,7 +40,7 @@ func main() {
 	topic := "test"
 
 	p, err := kafka.NewProducer(&kafka.ConfigMap{
-		"bootstrap.servers": "localhost",
+		"bootstrap.servers": "localhost:29092",
 		"client.id":         "test",
 		"acks":              "all"})
 
@@ -57,7 +57,7 @@ func main() {
 	}
 
 	c, err := kafka.NewConsumer(&kafka.ConfigMap{
-		"bootstrap.servers": "localhost",
+		"bootstrap.servers": "localhost:29092",
 		"group.id":          "kafka-delay-retry",
 		"auto.offset.reset": "earliest",
 	})
