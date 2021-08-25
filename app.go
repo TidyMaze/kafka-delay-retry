@@ -51,13 +51,6 @@ func main() {
 
 	defer p.Close()
 
-	// produce all numbers from 10 to 20 to kafka topic, prefixed by '-test'
-	for i := 10; i <= 20; i++ {
-		p.Produce(&kafka.Message{
-			TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
-			Value:          []byte(fmt.Sprintf("-test%d", i))}, nil)
-	}
-
 	c, err := kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers": "localhost:29092",
 		"group.id":          "kafka-delay-retry",
@@ -68,17 +61,26 @@ func main() {
 		panic(err)
 	}
 
-	c.SubscribeTopics([]string{topic}, nil)
-
 	defer c.Close()
 
-	for {
-		msg, err := c.ReadMessage(-1)
-		if err == nil {
-			fmt.Printf("Message on %s: %s\n", msg.TopicPartition, string(msg.Value))
-		} else {
-			// The client will automatically try to recover from all errors.
-			fmt.Printf("Consumer error: %v (%v)\n", err, msg)
+	c.SubscribeTopics([]string{topic}, nil)
+
+	go func() {
+		for {
+			msg, err := c.ReadMessage(-1)
+			if err == nil {
+				fmt.Printf("Message on %s: %s\n", msg.TopicPartition, string(msg.Value))
+			} else {
+				// The client will automatically try to recover from all errors.
+				fmt.Printf("Consumer error: %v (%v)\n", err, msg)
+			}
 		}
+	}()
+
+	// produce all numbers from 10 to 20 to kafka topic, prefixed by '-test'
+	for i := 10; i <= 1000; i++ {
+		p.Produce(&kafka.Message{
+			TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
+			Value:          []byte(fmt.Sprintf("-test%d", i))}, nil)
 	}
 }
