@@ -17,6 +17,28 @@ type Product struct {
 	Price uint
 }
 
+func startConsumingMessages(c *kafka.Consumer) {
+	// show start of consumer
+	fmt.Println("Starting consumer")
+	defer func() {
+		fmt.Println("End of consumer")
+	}()
+	for {
+		msg, err := c.ReadMessage(-1)
+		if err == nil {
+			fmt.Printf("Message on %s: %s\n", msg.TopicPartition, string(msg.Value))
+		} else {
+			// The client will automatically try to recover from all errors.
+			fmt.Printf("Consumer error: %v (%v)\n", err, msg)
+		}
+		_, error := c.CommitMessage(msg)
+		if error != nil {
+			fmt.Printf("Commit error: %v (%v)\n", error, msg)
+		}
+	}
+
+}
+
 func main() {
 	// print current GOMAXPROCS from runtime
 	fmt.Printf("GOMAXPROCS: %d\n", runtime.GOMAXPROCS(0))
@@ -81,29 +103,13 @@ func main() {
 
 	c.SubscribeTopics([]string{topic}, nil)
 
-	go func() {
-		for {
-			msg, err := c.ReadMessage(-1)
-			if err == nil {
-				fmt.Printf("Message on %s: %s\n", msg.TopicPartition, string(msg.Value))
-			} else {
-				// The client will automatically try to recover from all errors.
-				fmt.Printf("Consumer error: %v (%v)\n", err, msg)
-			}
-			partition, error := c.CommitMessage(msg)
-			if error != nil {
-				fmt.Printf("Commit error: %v (%v)\n", error, msg)
-			} else {
-				// show committed offset
-				fmt.Printf("Committed offset %v\n", partition)
-			}
-		}
-	}()
+	go startConsumingMessages(c)
 
 	delivery_chan := make(chan kafka.Event, 10000)
 
 	// produce all numbers from 10 to 20 to kafka topic, prefixed by '-test'
 	for i := 0; i < 10; i++ {
+		fmt.Printf("Producing message to topic %s: %d\n", topic, i)
 		err := p.Produce(&kafka.Message{
 			TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
 			Value:          []byte(fmt.Sprintf("%d-test", i))}, delivery_chan)
@@ -112,6 +118,8 @@ func main() {
 			fmt.Printf("Delivery failed: %v\n", err)
 		}
 	}
+	// show end of producer
+	fmt.Println("End of producer")
 
 	remaining := p.Flush(1000)
 	fmt.Printf("%d messages remaining in producer queue\n", remaining)
