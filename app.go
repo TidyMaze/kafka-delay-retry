@@ -78,7 +78,7 @@ func main() {
 				// The client will automatically try to recover from all errors.
 				fmt.Printf("Consumer error: %v (%v)\n", err, msg)
 			}
-			c.Commit()
+			c.CommitMessage(msg)
 		}
 	}()
 
@@ -87,8 +87,8 @@ func main() {
 		p.Produce(&kafka.Message{
 			TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
 			Value:          []byte(fmt.Sprintf("-test%d", i))}, nil)
-		p.Flush(10)
 	}
+	p.Flush(10000)
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(30 * time.Second)
 }
