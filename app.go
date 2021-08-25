@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"gorm.io/driver/sqlite"
@@ -41,6 +42,9 @@ func main() {
 
 	db.Delete(&product, 1)
 
+	// print start of kafka test
+	fmt.Println("Starting kafka test")
+
 	topic := "test"
 
 	p, err := kafka.NewProducer(&kafka.ConfigMap{
@@ -53,7 +57,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	defer p.Close()
+	defer func() {
+		fmt.Println("Producer cleanup")
+		p.Close()
+	}()
 
 	c, err := kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers":  "localhost:29092",
@@ -66,7 +73,11 @@ func main() {
 		panic(err)
 	}
 
-	defer c.Close()
+	// at the end of this function, make sure to close the consumer
+	defer func() {
+		fmt.Println("Consumer cleanup")
+		c.Close()
+	}()
 
 	c.SubscribeTopics([]string{topic}, nil)
 
@@ -104,4 +115,10 @@ func main() {
 
 	remaining := p.Flush(1000)
 	fmt.Printf("%d messages remaining in producer queue\n", remaining)
+
+	// wait 10 seconds for all messages to be delivered
+	time.Sleep(10 * time.Second)
+
+	// show end of program
+	fmt.Println("End of kafka test")
 }
