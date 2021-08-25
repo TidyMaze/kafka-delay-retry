@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"strconv"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"gorm.io/driver/sqlite"
@@ -50,10 +49,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	for i := 0; i < 100; i++ {
+	// produce all numbers from 10 to 20 to kafka topic, prefixed by '-test'
+	for i := 10; i <= 20; i++ {
 		p.Produce(&kafka.Message{
 			TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
-			Value:          []byte(strconv.Itoa(i))}, nil)
+			Value:          []byte(fmt.Sprintf("-test%d", i))}, nil)
 	}
 
 	c, err := kafka.NewConsumer(&kafka.ConfigMap{
