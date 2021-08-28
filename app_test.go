@@ -10,10 +10,12 @@ import (
 // testing main app
 func TestApp(t *testing.T) {
 	inputTopic := "test"
+	outputTopic := "test-output"
 
 	app := KafkaDelayRetryApp{
 		config: KafkaDelayRetryConfig{
 			inputTopic:       inputTopic,
+			outputTopic:      outputTopic,
 			bootstrapServers: "localhost:29092",
 		},
 	}
@@ -42,7 +44,7 @@ func produceTestMessages(topic string) {
 	}()
 
 	delivery_chan := make(chan kafka.Event, 10000)
-	// produce all numbers from 10 to 20 to kafka topic, prefixed by '-test'
+
 	for i := 0; i < 10; i++ {
 		fmt.Printf("Producing message to topic %s: %d\n", topic, i)
 		err := p.Produce(&kafka.Message{
@@ -53,7 +55,6 @@ func produceTestMessages(topic string) {
 			panic(fmt.Sprintf("Failed to produce message: %s\n", err))
 		}
 	}
-	// show end of producer
 	fmt.Println("End of producer")
 
 	remaining := p.Flush(1000)

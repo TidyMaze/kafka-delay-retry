@@ -16,6 +16,7 @@ type Product struct {
 
 type KafkaDelayRetryConfig struct {
 	inputTopic       string
+	outputTopic      string
 	bootstrapServers string
 }
 
@@ -49,9 +50,11 @@ func (a *KafkaDelayRetryApp) startConsumingMessages() {
 
 func main() {
 	inputTopic := "test"
+	outputTopic := "test-output"
 	app := KafkaDelayRetryApp{
 		config: KafkaDelayRetryConfig{
 			inputTopic:       inputTopic,
+			outputTopic:      outputTopic,
 			bootstrapServers: "localhost:9092",
 		},
 	}
