@@ -1,8 +1,7 @@
-package main
+package kafka_delay_retry
 
 import (
 	"fmt"
-	"runtime"
 	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
@@ -16,21 +15,27 @@ type Product struct {
 	Price uint
 }
 
-func startConsumingMessages(c *kafka.Consumer) {
+type KafkaDelayRetryApp struct {
+	inputTopic string
+	consumer   *kafka.Consumer
+	// producer   *kafka.Producer
+}
+
+func (a *KafkaDelayRetryApp) startConsumingMessages() {
 	// show start of consumer
 	fmt.Println("Starting consumer")
 	defer func() {
 		fmt.Println("End of consumer")
 	}()
 	for {
-		msg, err := c.ReadMessage(-1)
+		msg, err := a.consumer.ReadMessage(-1)
 		if err != nil {
 			panic(fmt.Sprintf("Consumer error: %v (%v)\n", err, msg))
 		}
 
 		fmt.Printf("Message on %s: %s\n", msg.TopicPartition, string(msg.Value))
 
-		_, error := c.CommitMessage(msg)
+		_, error := a.consumer.CommitMessage(msg)
 		if error != nil {
 			panic(fmt.Sprintf("Commit error: %v (%v)\n", error, msg))
 		}
@@ -38,10 +43,50 @@ func startConsumingMessages(c *kafka.Consumer) {
 
 }
 
-func main() {
-	// print current GOMAXPROCS from runtime
-	fmt.Printf("GOMAXPROCS: %d\n", runtime.GOMAXPROCS(0))
+func produceTestMessages(topic string) {
 
+	p, err := kafka.NewProducer(&kafka.ConfigMap{
+		"bootstrap.servers": "localhost:29092",
+		"client.id":         "test-producer",
+	})
+
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create producer: %s\n", err))
+	}
+
+	defer func() {
+		fmt.Println("Producer cleanup")
+		p.Close()
+	}()
+
+	delivery_chan := make(chan kafka.Event, 10000)
+	// produce all numbers from 10 to 20 to kafka topic, prefixed by '-test'
+	for i := 0; i < 10; i++ {
+		fmt.Printf("Producing message to topic %s: %d\n", topic, i)
+		err := p.Produce(&kafka.Message{
+			TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
+			Value:          []byte(fmt.Sprintf("%d-test", i))}, delivery_chan)
+
+		if err != nil {
+			panic(fmt.Sprintf("Failed to produce message: %s\n", err))
+		}
+		// sleep 500ms to simulate a delay
+		time.Sleep(500 * time.Millisecond)
+	}
+	// show end of producer
+	fmt.Println("End of producer")
+
+	remaining := p.Flush(1000)
+	fmt.Printf("%d messages remaining in producer queue\n", remaining)
+}
+
+func main() {
+	inputTopic := "test"
+	app := KafkaDelayRetryApp{inputTopic: inputTopic}
+	app.start()
+}
+
+func checkDb() {
 	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
 	if err != nil {
 		// log err with message
@@ -79,25 +124,19 @@ func main() {
 	if err != nil {
 		panic(fmt.Sprintf("Error deleting product: %v", err))
 	}
+}
 
-	// print start of kafka test
-	fmt.Println("Starting kafka test")
-
-	topic := "test"
-
-	p, err := kafka.NewProducer(&kafka.ConfigMap{
-		"bootstrap.servers": "localhost:29092",
-		"client.id":         "test",
-	})
-
+func (a *KafkaDelayRetryApp) subscribeTopics() {
+	err := a.consumer.SubscribeTopics([]string{a.inputTopic}, nil)
 	if err != nil {
-		panic(fmt.Sprintf("Failed to create producer: %s\n", err))
+		panic(fmt.Sprintf("Failed to subscribe to topic: %s\n", err))
 	}
+}
 
-	defer func() {
-		fmt.Println("Producer cleanup")
-		p.Close()
-	}()
+func (a *KafkaDelayRetryApp) start() {
+	fmt.Println("Starting app")
+
+	checkDb()
 
 	c, err := kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers":  "localhost:29092",
@@ -110,46 +149,16 @@ func main() {
 		panic(fmt.Sprintf("Failed to create consumer: %s\n", err))
 	}
 
-	defer func() {
-		fmt.Println("Consumer cleanup")
-		err := c.Close()
-		if err != nil {
-			panic(fmt.Sprintf("Error closing consumer: %v", err))
-		}
-	}()
+	a.consumer = c
+	a.subscribeTopics()
 
-	err = c.SubscribeTopics([]string{topic}, nil)
+	go a.startConsumingMessages()
+}
+
+func (a *KafkaDelayRetryApp) stop() {
+	fmt.Println("Consumer cleanup")
+	err := a.consumer.Close()
 	if err != nil {
-		panic(fmt.Sprintf("Failed to subscribe to topic: %s\n", err))
+		panic(fmt.Sprintf("Error closing consumer: %v", err))
 	}
-
-	go startConsumingMessages(c)
-
-	delivery_chan := make(chan kafka.Event, 10000)
-
-	// produce all numbers from 10 to 20 to kafka topic, prefixed by '-test'
-	for i := 0; i < 10; i++ {
-		fmt.Printf("Producing message to topic %s: %d\n", topic, i)
-		err := p.Produce(&kafka.Message{
-			TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
-			Value:          []byte(fmt.Sprintf("%d-test", i))}, delivery_chan)
-
-		if err != nil {
-			panic(fmt.Sprintf("Failed to produce message: %s\n", err))
-		}
-		// sleep 500ms to simulate a delay
-		time.Sleep(500 * time.Millisecond)
-	}
-	// show end of producer
-	fmt.Println("End of producer")
-
-	remaining := p.Flush(1000)
-	fmt.Printf("%d messages remaining in producer queue\n", remaining)
-
-	// show why we are sleeping
-	fmt.Println("Sleeping for 10 seconds")
-	time.Sleep(10 * time.Second)
-
-	// show end of program
-	fmt.Println("End of kafka test")
 }
