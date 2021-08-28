@@ -37,7 +37,7 @@ func (a *KafkaDelayRetryApp) startConsumingMessages() {
 			name: "yolo",
 		}
 
-		a.messageRepository.Create(sm)
+		a.messageRepository.Create(&sm)
 		fmt.Printf("Created message %v\n", sm)
 
 		delivery_chan := make(chan kafka.Event, 10000)
