@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
@@ -60,12 +59,10 @@ func (a *KafkaDelayRetryApp) startConsumingMessages() {
 }
 
 func main() {
-	inputTopic := "test"
-	outputTopic := "test-output"
 	app := KafkaDelayRetryApp{
 		config: KafkaDelayRetryConfig{
-			inputTopic:       inputTopic,
-			outputTopic:      outputTopic,
+			inputTopic:       "test",
+			outputTopic:      "test-output",
 			bootstrapServers: "localhost:9092",
 		},
 	}
@@ -73,43 +70,14 @@ func main() {
 }
 
 func checkDb() {
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-	if err != nil {
-		// log err with message
-		panic(fmt.Sprintf("Error opening database: %v", err))
-	}
+	messageRepo := NewMessageRepository()
 
-	err = db.AutoMigrate(&Product{})
-	if err != nil {
-		panic(fmt.Sprintf("Error auto-migrating: %v", err))
-	}
+	messageRepo.Truncate()
 
-	// Cleanup before running app
-	err = db.Exec("DELETE FROM products").Error
-	if err != nil {
-		panic(fmt.Sprintf("Error cleaning up: %v", err))
-	}
+	messageRepo.Create(&Product{Code: "D42", Price: 100})
 
-	err = db.Create(&Product{Code: "D42", Price: 100}).Error
-	if err != nil {
-		panic(fmt.Sprintf("Error creating product: %v", err))
-	}
-
-	var product Product
-	err = db.First(&product, 1).Error
-	if err != nil {
-		panic(fmt.Sprintf("Error finding product: %v", err))
-	}
-
-	err = db.Model(&product).Update("Price", 42).Error
-	if err != nil {
-		panic(fmt.Sprintf("Error updating product: %v", err))
-	}
-
-	err = db.Delete(&product, 1).Error
-	if err != nil {
-		panic(fmt.Sprintf("Error deleting product: %v", err))
-	}
+	product := messageRepo.FindById(1)
+	fmt.Println(product)
 }
 
 func (a *KafkaDelayRetryApp) subscribeTopics() {
