@@ -44,7 +44,7 @@ func (mr *MessageRepository) Truncate() {
 }
 
 func (mr *MessageRepository) Create(message StoredMessage) {
-	err := mr.db.Create(message).Error
+	err := mr.db.Create(&message).Error
 	if err != nil {
 		panic(fmt.Sprintf("Error saving message: %v", err))
 	}
