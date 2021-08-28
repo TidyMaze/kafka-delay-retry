@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"runtime"
 	"time"
 
@@ -25,15 +24,15 @@ func startConsumingMessages(c *kafka.Consumer) {
 	}()
 	for {
 		msg, err := c.ReadMessage(-1)
-		if err == nil {
-			fmt.Printf("Message on %s: %s\n", msg.TopicPartition, string(msg.Value))
-		} else {
-			// The client will automatically try to recover from all errors.
-			fmt.Printf("Consumer error: %v (%v)\n", err, msg)
+		if err != nil {
+			panic(fmt.Sprintf("Consumer error: %v (%v)\n", err, msg))
 		}
+
+		fmt.Printf("Message on %s: %s\n", msg.TopicPartition, string(msg.Value))
+
 		_, error := c.CommitMessage(msg)
 		if error != nil {
-			fmt.Printf("Commit error: %v (%v)\n", error, msg)
+			panic(fmt.Sprintf("Commit error: %v (%v)\n", error, msg))
 		}
 	}
 
@@ -45,24 +44,41 @@ func main() {
 
 	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
 	if err != nil {
-		panic("failed to connect database")
+		// log err with message
+		panic(fmt.Sprintf("Error opening database: %v", err))
 	}
 
-	db.AutoMigrate(&Product{})
+	err = db.AutoMigrate(&Product{})
+	if err != nil {
+		panic(fmt.Sprintf("Error auto-migrating: %v", err))
+	}
 
 	// Cleanup before running app
-	db.Exec("DELETE FROM products")
+	err = db.Exec("DELETE FROM products").Error
+	if err != nil {
+		panic(fmt.Sprintf("Error cleaning up: %v", err))
+	}
 
-	db.Create(&Product{Code: "D42", Price: 100})
+	err = db.Create(&Product{Code: "D42", Price: 100}).Error
+	if err != nil {
+		panic(fmt.Sprintf("Error creating product: %v", err))
+	}
 
 	var product Product
-	db.First(&product, 1)                 // find product with integer primary key
-	db.First(&product, "code = ?", "D42") // find product with code D42
+	err = db.First(&product, 1).Error
+	if err != nil {
+		panic(fmt.Sprintf("Error finding product: %v", err))
+	}
 
-	db.Model(&product).Update("Price", 42)
-	// db.Model(&product).Updates(map[string]interface{}{"Price": 200, "Code": "F42"})
+	err = db.Model(&product).Update("Price", 42).Error
+	if err != nil {
+		panic(fmt.Sprintf("Error updating product: %v", err))
+	}
 
-	db.Delete(&product, 1)
+	err = db.Delete(&product, 1).Error
+	if err != nil {
+		panic(fmt.Sprintf("Error deleting product: %v", err))
+	}
 
 	// print start of kafka test
 	fmt.Println("Starting kafka test")
@@ -75,8 +91,7 @@ func main() {
 	})
 
 	if err != nil {
-		fmt.Printf("Failed to create producer: %s\n", err)
-		os.Exit(1)
+		panic(fmt.Sprintf("Failed to create producer: %s\n", err))
 	}
 
 	defer func() {
@@ -92,16 +107,21 @@ func main() {
 	})
 
 	if err != nil {
-		panic(err)
+		panic(fmt.Sprintf("Failed to create consumer: %s\n", err))
 	}
 
-	// at the end of this function, make sure to close the consumer
 	defer func() {
 		fmt.Println("Consumer cleanup")
-		c.Close()
+		err := c.Close()
+		if err != nil {
+			panic(fmt.Sprintf("Error closing consumer: %v", err))
+		}
 	}()
 
-	c.SubscribeTopics([]string{topic}, nil)
+	err = c.SubscribeTopics([]string{topic}, nil)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to subscribe to topic: %s\n", err))
+	}
 
 	go startConsumingMessages(c)
 
@@ -115,7 +135,7 @@ func main() {
 			Value:          []byte(fmt.Sprintf("%d-test", i))}, delivery_chan)
 
 		if err != nil {
-			fmt.Printf("Delivery failed: %v\n", err)
+			panic(fmt.Sprintf("Failed to produce message: %s\n", err))
 		}
 		// sleep 500ms to simulate a delay
 		time.Sleep(500 * time.Millisecond)
