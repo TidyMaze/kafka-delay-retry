@@ -11,8 +11,12 @@ type MessageRepository struct {
 	db *gorm.DB
 }
 
-func NewMessageRepository() *MessageRepository {
-	db, err := gorm.Open(sqlite.Open("database.db"), &gorm.Config{})
+func NewSqliteMessageRepository() *MessageRepository {
+	return NewMessageRepository(sqlite.Open("database.db"))
+}
+
+func NewMessageRepository(dialector gorm.Dialector) *MessageRepository {
+	db, err := gorm.Open(dialector, &gorm.Config{})
 	if err != nil {
 		// log err with message
 		panic(fmt.Sprintf("Error opening database: %v", err))
