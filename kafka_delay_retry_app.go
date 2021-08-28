@@ -6,12 +6,6 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
-type KafkaDelayRetryConfig struct {
-	inputTopic       string
-	outputTopic      string
-	bootstrapServers string
-}
-
 type KafkaDelayRetryApp struct {
 	config            KafkaDelayRetryConfig
 	consumer          *kafka.Consumer
@@ -61,17 +55,6 @@ func (a *KafkaDelayRetryApp) startConsumingMessages() {
 		}
 	}
 
-}
-
-func main() {
-	app := KafkaDelayRetryApp{
-		config: KafkaDelayRetryConfig{
-			inputTopic:       "test",
-			outputTopic:      "test-output",
-			bootstrapServers: "localhost:9092",
-		},
-	}
-	app.start()
 }
 
 func (a *KafkaDelayRetryApp) subscribeTopics() {
