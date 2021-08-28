@@ -34,7 +34,11 @@ func (a *KafkaDelayRetryApp) startConsumingMessages() {
 		fmt.Printf("Message on %s: %s\n", msg.TopicPartition, string(msg.Value))
 
 		sm := StoredMessage{
-			name: "yolo",
+			Key:       msg.Key,
+			Value:     msg.Value,
+			Topic:     *msg.TopicPartition.Topic,
+			Partition: msg.TopicPartition.Partition,
+			Offset:    msg.TopicPartition.Offset,
 		}
 
 		a.messageRepository.Create(&sm)
@@ -80,8 +84,6 @@ func (a *KafkaDelayRetryApp) subscribeTopics() {
 func (a *KafkaDelayRetryApp) start() {
 	fmt.Println("Starting app")
 
-	a.messageRepository = NewMessageRepository()
-
 	newConsumer, err := kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers":  a.config.bootstrapServers,
 		"group.id":           "kafka-delay-retry",
@@ -123,5 +125,12 @@ func (a *KafkaDelayRetryApp) stop() {
 	a.producer.Close()
 	if err != nil {
 		panic(fmt.Sprintf("Error closing producer: %v", err))
+	}
+}
+
+func NewKafkaDelayRetryApp(config KafkaDelayRetryConfig) *KafkaDelayRetryApp {
+	return &KafkaDelayRetryApp{
+		config:            config,
+		messageRepository: NewMessageRepository(),
 	}
 }

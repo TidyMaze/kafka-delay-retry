@@ -17,7 +17,9 @@ func TestApp(t *testing.T) {
 		bootstrapServers: "localhost:29092",
 	}
 
-	app := KafkaDelayRetryApp{config: config}
+	app := NewKafkaDelayRetryApp(config)
+
+	app.messageRepository.Truncate()
 
 	app.start()
 	produceTestMessages(config.inputTopic)
