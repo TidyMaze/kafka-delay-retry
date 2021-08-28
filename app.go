@@ -34,8 +34,8 @@ func (a *KafkaDelayRetryApp) startConsumingMessages() {
 		fmt.Printf("Message on %s: %s\n", msg.TopicPartition, string(msg.Value))
 
 		sm := StoredMessage{
-			Key:       msg.Key,
-			Value:     msg.Value,
+			Key:       string(msg.Key),
+			Value:     string(msg.Value),
 			Topic:     *msg.TopicPartition.Topic,
 			Partition: msg.TopicPartition.Partition,
 			Offset:    msg.TopicPartition.Offset,

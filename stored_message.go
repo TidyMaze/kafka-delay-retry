@@ -12,8 +12,8 @@ type StoredMessage struct {
 	Topic        string
 	Partition    int32
 	Offset       kafka.Offset
-	Key          []byte
-	Value        []byte
+	Key          string
+	Value        string
 	WaitUntil    time.Time
 	WaitDuration time.Duration
 }
