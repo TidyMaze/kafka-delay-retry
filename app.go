@@ -14,9 +14,14 @@ type Product struct {
 	Price uint
 }
 
+type KafkaDelayRetryConfig struct {
+	inputTopic       string
+	bootstrapServers string
+}
+
 type KafkaDelayRetryApp struct {
-	inputTopic string
-	consumer   *kafka.Consumer
+	config   KafkaDelayRetryConfig
+	consumer *kafka.Consumer
 	// producer   *kafka.Producer
 }
 
@@ -44,7 +49,12 @@ func (a *KafkaDelayRetryApp) startConsumingMessages() {
 
 func main() {
 	inputTopic := "test"
-	app := KafkaDelayRetryApp{inputTopic: inputTopic}
+	app := KafkaDelayRetryApp{
+		config: KafkaDelayRetryConfig{
+			inputTopic:       inputTopic,
+			bootstrapServers: "localhost:9092",
+		},
+	}
 	app.start()
 }
 
@@ -89,7 +99,7 @@ func checkDb() {
 }
 
 func (a *KafkaDelayRetryApp) subscribeTopics() {
-	err := a.consumer.SubscribeTopics([]string{a.inputTopic}, nil)
+	err := a.consumer.SubscribeTopics([]string{a.config.inputTopic}, nil)
 	if err != nil {
 		panic(fmt.Sprintf("Failed to subscribe to topic: %s\n", err))
 	}
@@ -98,11 +108,12 @@ func (a *KafkaDelayRetryApp) subscribeTopics() {
 func (a *KafkaDelayRetryApp) start() {
 	fmt.Println("Starting app")
 
-	checkDb()
+	// checkDb()
 
-	c, err := kafka.NewConsumer(&kafka.ConfigMap{
-		"bootstrap.servers":  "localhost:29092",
+	newConsumer, err := kafka.NewConsumer(&kafka.ConfigMap{
+		"bootstrap.servers":  a.config.bootstrapServers,
 		"group.id":           "kafka-delay-retry",
+		"client.id":          "kafka-delay-retry",
 		"auto.offset.reset":  "earliest",
 		"enable.auto.commit": "false",
 	})
@@ -111,7 +122,7 @@ func (a *KafkaDelayRetryApp) start() {
 		panic(fmt.Sprintf("Failed to create consumer: %s\n", err))
 	}
 
-	a.consumer = c
+	a.consumer = newConsumer
 	a.subscribeTopics()
 
 	go a.startConsumingMessages()

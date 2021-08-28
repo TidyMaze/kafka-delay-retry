@@ -12,7 +12,10 @@ func TestApp(t *testing.T) {
 	inputTopic := "test"
 
 	app := KafkaDelayRetryApp{
-		inputTopic: inputTopic,
+		config: KafkaDelayRetryConfig{
+			inputTopic:       inputTopic,
+			bootstrapServers: "localhost:29092",
+		},
 	}
 
 	app.start()
