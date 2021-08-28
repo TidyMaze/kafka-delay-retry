@@ -11,27 +11,23 @@ import (
 
 // testing main app
 func TestApp(t *testing.T) {
-	inputTopic := "test"
-	outputTopic := "test-output"
-
-	app := KafkaDelayRetryApp{
-		config: KafkaDelayRetryConfig{
-			inputTopic:       inputTopic,
-			outputTopic:      outputTopic,
-			bootstrapServers: "localhost:29092",
-		},
+	config := KafkaDelayRetryConfig{
+		inputTopic:       "test",
+		outputTopic:      "test-output",
+		bootstrapServers: "localhost:29092",
 	}
 
-	app.start()
-	produceTestMessages(inputTopic)
-	app.stop()
+	app := KafkaDelayRetryApp{config: config}
 
-	messages := readMessages(outputTopic, 2000)
+	app.start()
+	produceTestMessages(config.inputTopic)
+	messages := readMessages(config.outputTopic, 1*time.Second)
+	app.stop()
 
 	assert.Len(t, messages, 10)
 }
 
-func readMessages(topic string, maxWaitForMessage int) []kafka.Message {
+func readMessages(topic string, maxWaitForMessage time.Duration) []kafka.Message {
 	c, err := kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers": "localhost:29092",
 		"group.id":          "test-consumer",
@@ -43,7 +39,7 @@ func readMessages(topic string, maxWaitForMessage int) []kafka.Message {
 	}
 
 	defer func() {
-		fmt.Println("Consumer cleanup")
+		fmt.Println("readMessages cleanup")
 		c.Close()
 	}()
 
@@ -58,12 +54,13 @@ func readMessages(topic string, maxWaitForMessage int) []kafka.Message {
 	messages := make([]kafka.Message, 0)
 
 	for {
-		msg, err := c.ReadMessage(time.Duration(maxWaitForMessage))
+		msg, err := c.ReadMessage(maxWaitForMessage)
 
 		if err != nil && err.(kafka.Error).Code() == kafka.ErrTimedOut {
 			return messages
 		} else if err == nil {
-			fmt.Printf("Received message: %s\n", string(msg.Value))
+			fmt.Printf("Received message in topic %s: %s\n", topic, string(msg.Value))
+			messages = append(messages, *msg)
 		} else {
 			panic(fmt.Sprintf("Failed to read message: %s\n", err))
 		}
