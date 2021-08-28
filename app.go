@@ -23,7 +23,7 @@ type KafkaDelayRetryConfig struct {
 type KafkaDelayRetryApp struct {
 	config   KafkaDelayRetryConfig
 	consumer *kafka.Consumer
-	// producer   *kafka.Producer
+	producer *kafka.Producer
 }
 
 func (a *KafkaDelayRetryApp) startConsumingMessages() {
@@ -39,6 +39,17 @@ func (a *KafkaDelayRetryApp) startConsumingMessages() {
 		}
 
 		fmt.Printf("Message on %s: %s\n", msg.TopicPartition, string(msg.Value))
+
+		delivery_chan := make(chan kafka.Event, 10000)
+
+		a.producer.Produce(&kafka.Message{
+			TopicPartition: kafka.TopicPartition{
+				Topic:     &a.config.outputTopic,
+				Partition: kafka.PartitionAny,
+			},
+			Key:   msg.Key,
+			Value: msg.Value,
+		}, delivery_chan)
 
 		_, error := a.consumer.CommitMessage(msg)
 		if error != nil {
