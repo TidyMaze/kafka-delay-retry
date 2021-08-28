@@ -137,6 +137,18 @@ func (a *KafkaDelayRetryApp) start() {
 	}
 
 	a.consumer = newConsumer
+
+	newProducer, err := kafka.NewProducer(&kafka.ConfigMap{
+		"bootstrap.servers": a.config.bootstrapServers,
+		"client.id":         "kafka-delay-retry",
+	})
+
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create producer: %s\n", err))
+	}
+
+	a.producer = newProducer
+
 	a.subscribeTopics()
 
 	go a.startConsumingMessages()
