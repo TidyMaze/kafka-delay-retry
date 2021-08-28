@@ -114,6 +114,6 @@ func (a *KafkaDelayRetryApp) stop() {
 func NewKafkaDelayRetryApp(config KafkaDelayRetryConfig) *KafkaDelayRetryApp {
 	return &KafkaDelayRetryApp{
 		config:            config,
-		messageRepository: NewSqliteMessageRepository(),
+		messageRepository: SqliteMessageRepository(),
 	}
 }

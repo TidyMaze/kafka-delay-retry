@@ -11,8 +11,12 @@ type MessageRepository struct {
 	db *gorm.DB
 }
 
-func NewSqliteMessageRepository() *MessageRepository {
-	return NewMessageRepository(sqlite.Open("database.db"))
+func SqliteMessageRepository() *MessageRepository {
+	return SqliteMessageRepositoryFromFile("database.db")
+}
+
+func SqliteMessageRepositoryFromFile(file string) *MessageRepository {
+	return NewMessageRepository(sqlite.Open(file))
 }
 
 func NewMessageRepository(dialector gorm.Dialector) *MessageRepository {
