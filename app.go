@@ -4,14 +4,7 @@ import (
 	"fmt"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"gorm.io/gorm"
 )
-
-type Product struct {
-	gorm.Model
-	Code  string
-	Price uint
-}
 
 type KafkaDelayRetryConfig struct {
 	inputTopic       string
@@ -20,9 +13,10 @@ type KafkaDelayRetryConfig struct {
 }
 
 type KafkaDelayRetryApp struct {
-	config   KafkaDelayRetryConfig
-	consumer *kafka.Consumer
-	producer *kafka.Producer
+	config            KafkaDelayRetryConfig
+	consumer          *kafka.Consumer
+	producer          *kafka.Producer
+	messageRepository *MessageRepository
 }
 
 func (a *KafkaDelayRetryApp) startConsumingMessages() {
@@ -38,6 +32,12 @@ func (a *KafkaDelayRetryApp) startConsumingMessages() {
 		}
 
 		fmt.Printf("Message on %s: %s\n", msg.TopicPartition, string(msg.Value))
+
+		sm := StoredMessage{
+			Message: *msg,
+		}
+
+		a.messageRepository.Create(sm)
 
 		delivery_chan := make(chan kafka.Event, 10000)
 
@@ -69,17 +69,6 @@ func main() {
 	app.start()
 }
 
-func checkDb() {
-	messageRepo := NewMessageRepository()
-
-	messageRepo.Truncate()
-
-	messageRepo.Create(&Product{Code: "D42", Price: 100})
-
-	product := messageRepo.FindById(1)
-	fmt.Println(product)
-}
-
 func (a *KafkaDelayRetryApp) subscribeTopics() {
 	err := a.consumer.SubscribeTopics([]string{a.config.inputTopic}, nil)
 	if err != nil {
@@ -90,7 +79,7 @@ func (a *KafkaDelayRetryApp) subscribeTopics() {
 func (a *KafkaDelayRetryApp) start() {
 	fmt.Println("Starting app")
 
-	// checkDb()
+	a.messageRepository = NewMessageRepository()
 
 	newConsumer, err := kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers":  a.config.bootstrapServers,

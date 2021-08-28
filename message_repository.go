@@ -28,7 +28,7 @@ func NewMessageRepository() *MessageRepository {
 }
 
 func (mr *MessageRepository) migrate() {
-	err := mr.db.AutoMigrate(&Product{})
+	err := mr.db.AutoMigrate(&StoredMessage{})
 	if err != nil {
 		panic(fmt.Sprintf("Error auto-migrating: %v", err))
 	}
@@ -43,18 +43,18 @@ func (mr *MessageRepository) Truncate() {
 	}
 }
 
-func (mr *MessageRepository) Create(product *Product) {
-	err := mr.db.Create(product).Error
+func (mr *MessageRepository) Create(message StoredMessage) {
+	err := mr.db.Create(message).Error
 	if err != nil {
-		panic(fmt.Sprintf("Error creating product: %v", err))
+		panic(fmt.Sprintf("Error saving message: %v", err))
 	}
 }
 
-func (mr *MessageRepository) FindById(id int) Product {
-	var product Product
-	err := mr.db.First(&product, id).Error
+func (mr *MessageRepository) FindById(id int) StoredMessage {
+	var msg StoredMessage
+	err := mr.db.First(&msg, id).Error
 	if err != nil {
-		panic(fmt.Sprintf("Error finding product: %v", err))
+		panic(fmt.Sprintf("Error finding message: %v", err))
 	}
-	return product
+	return msg
 }
