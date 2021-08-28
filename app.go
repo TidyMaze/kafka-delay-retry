@@ -160,4 +160,10 @@ func (a *KafkaDelayRetryApp) stop() {
 	if err != nil {
 		panic(fmt.Sprintf("Error closing consumer: %v", err))
 	}
+
+	fmt.Println("Producer cleanup")
+	a.producer.Close()
+	if err != nil {
+		panic(fmt.Sprintf("Error closing producer: %v", err))
+	}
 }
