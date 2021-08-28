@@ -37,7 +37,7 @@ func (mr *MessageRepository) migrate() {
 // truncate db table
 func (mr *MessageRepository) Truncate() {
 	// Cleanup before running app
-	err := mr.db.Exec("DELETE FROM products").Error
+	err := mr.db.Exec("DELETE FROM stored_messages").Error
 	if err != nil {
 		panic(fmt.Sprintf("Error cleaning up: %v", err))
 	}
