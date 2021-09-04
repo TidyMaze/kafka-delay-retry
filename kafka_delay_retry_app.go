@@ -2,6 +2,7 @@ package kafka_delay_retry
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
@@ -94,6 +95,7 @@ func (a *KafkaDelayRetryApp) start() {
 
 	a.subscribeTopics()
 
+	go a.startExpiredMessagesPolling()
 	go a.startConsumingMessages()
 }
 
@@ -115,5 +117,29 @@ func NewKafkaDelayRetryApp(config KafkaDelayRetryConfig) *KafkaDelayRetryApp {
 	return &KafkaDelayRetryApp{
 		config:            config,
 		messageRepository: SqliteMessageRepository(),
+	}
+}
+
+func (a *KafkaDelayRetryApp) startExpiredMessagesPolling() {
+	for {
+		expiredMessages := a.messageRepository.FindAllExpired()
+		for _, message := range expiredMessages {
+			fmt.Printf("Retrying message %v\n", message)
+
+			delivery_chan := make(chan kafka.Event, 10000)
+
+			a.producer.Produce(&kafka.Message{
+				TopicPartition: kafka.TopicPartition{
+					Topic:     &a.config.outputTopic,
+					Partition: kafka.PartitionAny,
+				},
+				Key:   []byte(message.Key),
+				Value: []byte(message.Value),
+			}, delivery_chan)
+
+			a.messageRepository.Delete(message)
+		}
+		fmt.Println("Sleeping")
+		time.Sleep(time.Second * 1)
 	}
 }

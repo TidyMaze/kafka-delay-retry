@@ -2,6 +2,7 @@ package kafka_delay_retry
 
 import (
 	"fmt"
+	"time"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -65,4 +66,22 @@ func (mr *MessageRepository) FindById(id int) StoredMessage {
 		panic(fmt.Sprintf("Error finding message: %v", err))
 	}
 	return msg
+}
+
+// find all stored messages who WaitUntil is less than or equal to now
+func (mr *MessageRepository) FindAllExpired() []StoredMessage {
+	var msgs []StoredMessage
+	err := mr.db.Where("wait_until <= ?", time.Now()).Find(&msgs).Error
+	if err != nil {
+		panic(fmt.Sprintf("Error finding messages: %v", err))
+	}
+	return msgs
+}
+
+// delete a stored message
+func (mr *MessageRepository) Delete(msg StoredMessage) {
+	err := mr.db.Delete(&msg).Error
+	if err != nil {
+		panic(fmt.Sprintf("Error deleting message: %v", err))
+	}
 }
