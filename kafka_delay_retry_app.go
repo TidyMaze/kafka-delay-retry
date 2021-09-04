@@ -2,6 +2,7 @@ package kafka_delay_retry
 
 import (
 	"fmt"
+	"math/rand"
 	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
@@ -28,7 +29,8 @@ func (a *KafkaDelayRetryApp) startConsumingMessages() {
 
 		fmt.Printf("Message on %s: %s\n", msg.TopicPartition, string(msg.Value))
 
-		waitDuration := time.Duration(5) * time.Second
+		// random wait duration between 1 and 5 seconds
+		waitDuration := time.Duration(1+rand.Intn(4)) * time.Second
 
 		sm := StoredMessage{
 			Key:          string(msg.Key),
@@ -41,7 +43,8 @@ func (a *KafkaDelayRetryApp) startConsumingMessages() {
 		}
 
 		a.messageRepository.Create(&sm)
-		fmt.Printf("Stored message %v\n", sm.Value)
+		// log stored message value with wait duration
+		fmt.Printf("Stored message %v with duration %v\n", sm.Value, sm.WaitDuration)
 
 		// delivery_chan := make(chan kafka.Event, 10000)
 		// a.producer.Produce(&kafka.Message{
@@ -129,7 +132,7 @@ func (a *KafkaDelayRetryApp) startExpiredMessagesPolling() {
 
 		// log all expired messages
 		for _, expiredMessage := range expiredMessages {
-			fmt.Printf("Expired message %v\n", expiredMessage.Value)
+			fmt.Printf("Expired message %v with duration %v\n", expiredMessage.Value, expiredMessage.WaitDuration)
 		}
 
 		for _, message := range expiredMessages {
