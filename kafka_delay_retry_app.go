@@ -28,27 +28,30 @@ func (a *KafkaDelayRetryApp) startConsumingMessages() {
 
 		fmt.Printf("Message on %s: %s\n", msg.TopicPartition, string(msg.Value))
 
+		waitDuration := time.Duration(5) * time.Second
+
 		sm := StoredMessage{
-			Key:       string(msg.Key),
-			Value:     string(msg.Value),
-			Topic:     *msg.TopicPartition.Topic,
-			Partition: msg.TopicPartition.Partition,
-			Offset:    msg.TopicPartition.Offset,
+			Key:          string(msg.Key),
+			Value:        string(msg.Value),
+			Topic:        *msg.TopicPartition.Topic,
+			Partition:    msg.TopicPartition.Partition,
+			Offset:       msg.TopicPartition.Offset,
+			WaitDuration: waitDuration,
+			WaitUntil:    time.Now().Add(waitDuration),
 		}
 
 		a.messageRepository.Create(&sm)
-		fmt.Printf("Created message %v\n", sm)
+		fmt.Printf("Stored message %v\n", sm.Value)
 
-		delivery_chan := make(chan kafka.Event, 10000)
-
-		a.producer.Produce(&kafka.Message{
-			TopicPartition: kafka.TopicPartition{
-				Topic:     &a.config.outputTopic,
-				Partition: kafka.PartitionAny,
-			},
-			Key:   msg.Key,
-			Value: msg.Value,
-		}, delivery_chan)
+		// delivery_chan := make(chan kafka.Event, 10000)
+		// a.producer.Produce(&kafka.Message{
+		// 	TopicPartition: kafka.TopicPartition{
+		// 		Topic:     &a.config.outputTopic,
+		// 		Partition: kafka.PartitionAny,
+		// 	},
+		// 	Key:   msg.Key,
+		// 	Value: msg.Value,
+		// }, delivery_chan)
 
 		_, error := a.consumer.CommitMessage(msg)
 		if error != nil {
@@ -124,7 +127,7 @@ func (a *KafkaDelayRetryApp) startExpiredMessagesPolling() {
 	for {
 		expiredMessages := a.messageRepository.FindAllExpired()
 		for _, message := range expiredMessages {
-			fmt.Printf("Retrying message %v\n", message)
+			fmt.Printf("Retrying message %v\n", message.Value)
 
 			delivery_chan := make(chan kafka.Event, 10000)
 
@@ -138,8 +141,8 @@ func (a *KafkaDelayRetryApp) startExpiredMessagesPolling() {
 			}, delivery_chan)
 
 			a.messageRepository.Delete(message)
+			fmt.Printf("Deleted message %v\n", message.Value)
 		}
-		fmt.Println("Sleeping")
 		time.Sleep(time.Second * 1)
 	}
 }
