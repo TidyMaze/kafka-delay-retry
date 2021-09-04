@@ -126,6 +126,12 @@ func NewKafkaDelayRetryApp(config KafkaDelayRetryConfig) *KafkaDelayRetryApp {
 func (a *KafkaDelayRetryApp) startExpiredMessagesPolling() {
 	for {
 		expiredMessages := a.messageRepository.FindAllExpired()
+
+		// log all expired messages
+		for _, expiredMessage := range expiredMessages {
+			fmt.Printf("Expired message %v\n", expiredMessage.Value)
+		}
+
 		for _, message := range expiredMessages {
 			fmt.Printf("Retrying message %v\n", message.Value)
 
