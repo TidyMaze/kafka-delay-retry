@@ -69,7 +69,7 @@ func readMessages(topic string, maxWaitForMessage time.Duration) []kafka.Message
 		if err != nil && err.(kafka.Error).Code() == kafka.ErrTimedOut {
 			return messages
 		} else if err == nil {
-			fmt.Printf("Received message in topic %s: %s\n", topic, string(msg.Value))
+			fmt.Printf("[readMessages] Received message in topic %s: %s\n", topic, string(msg.Value))
 			messages = append(messages, *msg)
 		} else {
 			panic(fmt.Sprintf("Failed to read message: %s\n", err))
