@@ -8,7 +8,7 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
-func StartTestApp() {
+func StartTestApp(inputTopic string, outputTopic string) {
 	rand.Seed(time.Now().UnixNano())
 
 	fmt.Println("Starting test app")
@@ -37,7 +37,7 @@ func StartTestApp() {
 		panic(fmt.Sprintf("Failed to create producer: %s\n", err))
 	}
 
-	consumer.SubscribeTopics([]string{"test-app-input-topic"}, nil)
+	consumer.SubscribeTopics([]string{inputTopic}, nil)
 	if err != nil {
 		panic(fmt.Sprintf("Failed to subscribe to topic: %s\n", err))
 	}
@@ -50,11 +50,11 @@ func StartTestApp() {
 
 		isAFailure := rand.Intn(100) < 60
 		if isAFailure {
-			topic := "test-app-input-topic-retry"
+			topic := inputTopic + "-retry"
 			fmt.Printf("[RandomProcessApp] Message FAILURE on %s: %s\n", msg.TopicPartition, string(msg.Value))
 			copyMessageTo(topic, msg, producer, consumer)
 		} else {
-			topic := "test-app-output-topic"
+			topic := outputTopic
 			fmt.Printf("[RandomProcessApp] Message SUCCESS on %s: %s\n", msg.TopicPartition, string(msg.Value))
 			copyMessageTo(topic, msg, producer, consumer)
 		}

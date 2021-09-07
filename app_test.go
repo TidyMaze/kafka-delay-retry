@@ -29,7 +29,7 @@ func TestApp(t *testing.T) {
 
 	produceTestMessages(inputTopic, 100)
 
-	go StartTestApp()
+	go StartTestApp(inputTopic, outputTopic)
 
 	messages := expectMessages(t, outputTopic, 5*time.Minute, 100)
 
