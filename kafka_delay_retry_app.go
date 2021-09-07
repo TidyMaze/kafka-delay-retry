@@ -1,8 +1,8 @@
 package kafka_delay_retry
 
 import (
+	"encoding/binary"
 	"fmt"
-	"math/rand"
 	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
@@ -26,9 +26,18 @@ func (a *KafkaDelayRetryApp) startConsumingMessages() {
 			panic(fmt.Sprintf("Consumer error: %v (%v)\n", err, msg))
 		}
 
-		fmt.Printf("Message on %s: %s\n", msg.TopicPartition, string(msg.Value))
+		fmt.Printf("[Retry] Message on %s: %s\n", msg.TopicPartition, string(msg.Value))
 
-		waitDuration := time.Duration(1+rand.Intn(4)) * time.Second
+		// check if message already have a "retry-duration" defined and fallback to 1 else
+		waitDuration := time.Duration(1) * time.Second
+		if msg.Headers != nil {
+			for _, header := range msg.Headers {
+				if string(header.Key) == "retry-duration" {
+					waitDuration = time.Duration(binary.BigEndian.Uint64(header.Value)) * 2 * time.Second
+					break
+				}
+			}
+		}
 
 		sm := StoredMessage{
 			Key:          string(msg.Key),

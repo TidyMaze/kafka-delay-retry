@@ -31,7 +31,7 @@ func TestApp(t *testing.T) {
 
 	go StartTestApp()
 
-	messages := readMessages(outputTopic, 1*time.Second)
+	messages := readMessages(outputTopic, 10*time.Second)
 	app.stop()
 
 	assert.Len(t, messages, 10)

@@ -3,7 +3,6 @@ package kafka_delay_retry
 import (
 	"fmt"
 	"math/rand"
-	"strconv"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
@@ -46,7 +45,7 @@ func StartTestApp() {
 			panic(fmt.Sprintf("Consumer error: %v (%v)\n", err, msg))
 		}
 
-		fmt.Printf("Message on %s: %s\n", msg.TopicPartition, string(msg.Value))
+		fmt.Printf("[RandomProcessApp] Message on %s: %s\n", msg.TopicPartition, string(msg.Value))
 
 		delivery_chan := make(chan kafka.Event, 10000)
 
@@ -58,12 +57,9 @@ func StartTestApp() {
 					Topic:     &topic,
 					Partition: kafka.PartitionAny,
 				},
-				Key:   []byte(msg.Key),
-				Value: []byte(msg.Value),
-				Headers: []kafka.Header{
-					{Key: "kafka-retry-wait",
-						Value: []byte(strconv.Itoa(1))},
-				},
+				Key:     []byte(msg.Key),
+				Value:   []byte(msg.Value),
+				Headers: msg.Headers,
 			}
 
 			producer.Produce(&message, delivery_chan)
@@ -79,12 +75,9 @@ func StartTestApp() {
 					Topic:     &topic,
 					Partition: kafka.PartitionAny,
 				},
-				Key:   []byte(msg.Key),
-				Value: []byte(msg.Value),
-				Headers: []kafka.Header{
-					{Key: "kafka-retry-wait",
-						Value: []byte(strconv.Itoa(1))},
-				},
+				Key:     []byte(msg.Key),
+				Value:   []byte(msg.Value),
+				Headers: msg.Headers,
 			}
 
 			producer.Produce(&message, delivery_chan)
