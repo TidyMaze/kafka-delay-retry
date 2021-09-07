@@ -45,8 +45,6 @@ func StartTestApp() {
 			panic(fmt.Sprintf("Consumer error: %v (%v)\n", err, msg))
 		}
 
-		fmt.Printf("[RandomProcessApp] Message on %s: %s\n", msg.TopicPartition, string(msg.Value))
-
 		delivery_chan := make(chan kafka.Event, 10000)
 
 		// with 50% chance, send the message to the topic or commit it
@@ -68,6 +66,8 @@ func StartTestApp() {
 			if error != nil {
 				panic(fmt.Sprintf("Commit error: %v (%v)\n", error, msg))
 			}
+
+			fmt.Printf("[RandomProcessApp] Message SUCCESS on %s: %s\n", msg.TopicPartition, string(msg.Value))
 		} else {
 			topic := "test-app-input-topic-retry"
 			message := kafka.Message{
@@ -86,6 +86,8 @@ func StartTestApp() {
 			if error != nil {
 				panic(fmt.Sprintf("Commit error: %v (%v)\n", error, msg))
 			}
+
+			fmt.Printf("[RandomProcessApp] Message FAILURE on %s: %s\n", msg.TopicPartition, string(msg.Value))
 		}
 
 	}
