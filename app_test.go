@@ -31,13 +31,16 @@ func TestApp(t *testing.T) {
 
 	go StartTestApp()
 
-	messages := readMessages(outputTopic, 5*time.Minute)
-	app.stop()
+	messages := expectMessages(t, outputTopic, 5*time.Minute, 10)
 
-	assert.Len(t, messages, 10)
+	for _, msg := range messages {
+		fmt.Printf("%s\n", msg.Value)
+	}
+
+	app.stop()
 }
 
-func readMessages(topic string, maxWaitForMessage time.Duration) []kafka.Message {
+func expectMessages(t assert.TestingT, topic string, maxWaitForMessage time.Duration, expectedSize int) []kafka.Message {
 	c, err := kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers": "localhost:29092",
 		"group.id":          "test-consumer",
@@ -71,6 +74,12 @@ func readMessages(topic string, maxWaitForMessage time.Duration) []kafka.Message
 		} else if err == nil {
 			fmt.Printf("[readMessages] Received message in topic %s: %s\n", topic, string(msg.Value))
 			messages = append(messages, *msg)
+
+			if len(messages) == expectedSize {
+				return messages
+			} else if len(messages) > expectedSize {
+				assert.Fail(t, fmt.Sprintf("Expected %d messages, but got %d\n", expectedSize, len(messages)))
+			}
 		} else {
 			panic(fmt.Sprintf("Failed to read message: %s\n", err))
 		}
