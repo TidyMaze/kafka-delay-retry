@@ -27,11 +27,13 @@ func TestApp(t *testing.T) {
 
 	app.start()
 
-	produceTestMessages(inputTopic, 100)
+	sizeProduced := 100
+
+	produceTestMessages(inputTopic, sizeProduced)
 
 	go StartTestApp(inputTopic, outputTopic)
 
-	messages := expectMessages(t, outputTopic, 5*time.Minute, 100)
+	messages := expectMessages(t, outputTopic, 5*time.Minute, sizeProduced)
 
 	for _, msg := range messages {
 		fmt.Printf("%s\n", msg.Value)
