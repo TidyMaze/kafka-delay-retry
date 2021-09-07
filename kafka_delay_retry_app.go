@@ -127,17 +127,13 @@ func (a *KafkaDelayRetryApp) startExpiredMessagesPolling() {
 		expiredMessages := a.messageRepository.FindAllExpired()
 
 		for _, message := range expiredMessages {
-			fmt.Printf("Retrying expired message %v with duration %v\n", message.Value, message.WaitDuration)
+			fmt.Printf("[Retry] Retrying expired message %v with duration %v\n", message.Value, message.WaitDuration)
 
 			delivery_chan := make(chan kafka.Event, 10000)
 
 			retryDurationHeaderValue := make([]byte, 8)
 
-			durationInt := uint64(message.WaitDuration.Milliseconds())
-
-			fmt.Printf("serializing duration %v\n", durationInt)
-
-			binary.BigEndian.PutUint64(retryDurationHeaderValue, durationInt)
+			binary.BigEndian.PutUint64(retryDurationHeaderValue, uint64(message.WaitDuration.Milliseconds()))
 
 			a.producer.Produce(&kafka.Message{
 				TopicPartition: kafka.TopicPartition{
