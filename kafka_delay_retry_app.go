@@ -28,12 +28,12 @@ func (a *KafkaDelayRetryApp) startConsumingMessages() {
 
 		fmt.Printf("[Retry] Message on %s: %s with headers %v\n", msg.TopicPartition, string(msg.Value), msg.Headers)
 
-		waitDuration := time.Duration(1) * time.Second
+		waitDuration := time.Duration(100) * time.Millisecond
 		if msg.Headers != nil {
 			for _, header := range msg.Headers {
 				if string(header.Key) == "retry-duration" {
 					intDuration := int64(binary.BigEndian.Uint64(header.Value))
-					waitDuration = time.Duration(intDuration) * 2 * time.Second
+					waitDuration = time.Duration(intDuration) * 2 * time.Millisecond
 					break
 				}
 			}
@@ -133,7 +133,7 @@ func (a *KafkaDelayRetryApp) startExpiredMessagesPolling() {
 
 			retryDurationHeaderValue := make([]byte, 8)
 
-			durationInt := uint64(message.WaitDuration.Seconds())
+			durationInt := uint64(message.WaitDuration.Milliseconds())
 
 			fmt.Printf("serializing duration %v\n", durationInt)
 
@@ -157,6 +157,6 @@ func (a *KafkaDelayRetryApp) startExpiredMessagesPolling() {
 			a.messageRepository.Delete(message)
 			fmt.Printf("[Retry] Deleted message %v\n", message.Value)
 		}
-		time.Sleep(time.Second * 1)
+		time.Sleep(time.Millisecond * 100)
 	}
 }

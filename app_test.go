@@ -27,11 +27,11 @@ func TestApp(t *testing.T) {
 
 	app.start()
 
-	produceTestMessages(inputTopic)
+	produceTestMessages(inputTopic, 100)
 
 	go StartTestApp()
 
-	messages := expectMessages(t, outputTopic, 5*time.Minute, 10)
+	messages := expectMessages(t, outputTopic, 5*time.Minute, 100)
 
 	for _, msg := range messages {
 		fmt.Printf("%s\n", msg.Value)
@@ -86,7 +86,7 @@ func expectMessages(t assert.TestingT, topic string, maxWaitForMessage time.Dura
 	}
 }
 
-func produceTestMessages(topic string) {
+func produceTestMessages(topic string, size int) {
 
 	p, err := kafka.NewProducer(&kafka.ConfigMap{
 		"bootstrap.servers": "localhost:29092",
@@ -104,7 +104,7 @@ func produceTestMessages(topic string) {
 
 	delivery_chan := make(chan kafka.Event, 10000)
 
-	for i := 0; i < 10; i++ {
+	for i := 0; i < size; i++ {
 		fmt.Printf("Producing message to topic %s: %d\n", topic, i)
 		err := p.Produce(&kafka.Message{
 			TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},

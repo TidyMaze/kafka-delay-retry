@@ -50,7 +50,7 @@ func StartTestApp() {
 
 		delivery_chan := make(chan kafka.Event, 10000)
 
-		if rand.Intn(100) < 50 {
+		if rand.Intn(100) < 60 {
 			topic := "test-app-input-topic-retry"
 			message := kafka.Message{
 				TopicPartition: kafka.TopicPartition{
