@@ -15,6 +15,10 @@ type KafkaDelayRetryApp struct {
 	messageRepository *MessageRepository
 }
 
+const (
+	RETRY_HEADER_KEY = "retry-duration"
+)
+
 func (a *KafkaDelayRetryApp) startConsumingMessages() {
 	fmt.Println("Starting consumer")
 	defer func() {
@@ -31,7 +35,7 @@ func (a *KafkaDelayRetryApp) startConsumingMessages() {
 		waitDuration := time.Duration(100) * time.Millisecond
 		if msg.Headers != nil {
 			for _, header := range msg.Headers {
-				if string(header.Key) == "retry-duration" {
+				if string(header.Key) == RETRY_HEADER_KEY {
 					intDuration, _ := strconv.Atoi(string(header.Value))
 					waitDuration = time.Duration(intDuration) * 2 * time.Millisecond
 					break
@@ -142,7 +146,7 @@ func (a *KafkaDelayRetryApp) startExpiredMessagesPolling() {
 				Value: []byte(message.Value),
 				Headers: []kafka.Header{
 					{
-						Key:   "retry-duration",
+						Key:   RETRY_HEADER_KEY,
 						Value: []byte(retryDurationHeaderValue),
 					},
 				},
