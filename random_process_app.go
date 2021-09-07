@@ -47,28 +47,7 @@ func StartTestApp() {
 
 		delivery_chan := make(chan kafka.Event, 10000)
 
-		// with 50% chance, send the message to the topic or commit it
-		if rand.Intn(2) == 0 {
-			topic := "test-app-output-topic"
-			message := kafka.Message{
-				TopicPartition: kafka.TopicPartition{
-					Topic:     &topic,
-					Partition: kafka.PartitionAny,
-				},
-				Key:     []byte(msg.Key),
-				Value:   []byte(msg.Value),
-				Headers: msg.Headers,
-			}
-
-			producer.Produce(&message, delivery_chan)
-
-			_, error := consumer.CommitMessage(msg)
-			if error != nil {
-				panic(fmt.Sprintf("Commit error: %v (%v)\n", error, msg))
-			}
-
-			fmt.Printf("[RandomProcessApp] Message SUCCESS on %s: %s\n", msg.TopicPartition, string(msg.Value))
-		} else {
+		if rand.Intn(3) == 0 {
 			topic := "test-app-input-topic-retry"
 			message := kafka.Message{
 				TopicPartition: kafka.TopicPartition{
@@ -88,6 +67,26 @@ func StartTestApp() {
 			}
 
 			fmt.Printf("[RandomProcessApp] Message FAILURE on %s: %s\n", msg.TopicPartition, string(msg.Value))
+		} else {
+			topic := "test-app-output-topic"
+			message := kafka.Message{
+				TopicPartition: kafka.TopicPartition{
+					Topic:     &topic,
+					Partition: kafka.PartitionAny,
+				},
+				Key:     []byte(msg.Key),
+				Value:   []byte(msg.Value),
+				Headers: msg.Headers,
+			}
+
+			producer.Produce(&message, delivery_chan)
+
+			_, error := consumer.CommitMessage(msg)
+			if error != nil {
+				panic(fmt.Sprintf("Commit error: %v (%v)\n", error, msg))
+			}
+
+			fmt.Printf("[RandomProcessApp] Message SUCCESS on %s: %s\n", msg.TopicPartition, string(msg.Value))
 		}
 
 	}
