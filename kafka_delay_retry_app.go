@@ -1,8 +1,8 @@
 package kafka_delay_retry
 
 import (
-	"encoding/binary"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
@@ -32,7 +32,7 @@ func (a *KafkaDelayRetryApp) startConsumingMessages() {
 		if msg.Headers != nil {
 			for _, header := range msg.Headers {
 				if string(header.Key) == "retry-duration" {
-					intDuration := int64(binary.BigEndian.Uint64(header.Value))
+					intDuration, _ := strconv.Atoi(string(header.Value))
 					waitDuration = time.Duration(intDuration) * 2 * time.Millisecond
 					break
 				}
@@ -131,9 +131,7 @@ func (a *KafkaDelayRetryApp) startExpiredMessagesPolling() {
 
 			delivery_chan := make(chan kafka.Event, 10000)
 
-			retryDurationHeaderValue := make([]byte, 8)
-
-			binary.BigEndian.PutUint64(retryDurationHeaderValue, uint64(message.WaitDuration.Milliseconds()))
+			retryDurationHeaderValue := strconv.Itoa(int(message.WaitDuration.Milliseconds()))
 
 			a.producer.Produce(&kafka.Message{
 				TopicPartition: kafka.TopicPartition{
@@ -145,7 +143,7 @@ func (a *KafkaDelayRetryApp) startExpiredMessagesPolling() {
 				Headers: []kafka.Header{
 					{
 						Key:   "retry-duration",
-						Value: retryDurationHeaderValue,
+						Value: []byte(retryDurationHeaderValue),
 					},
 				},
 			}, delivery_chan)
