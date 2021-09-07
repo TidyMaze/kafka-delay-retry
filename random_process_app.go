@@ -48,49 +48,36 @@ func StartTestApp() {
 			panic(fmt.Sprintf("Consumer error: %v (%v)\n", err, msg))
 		}
 
-		delivery_chan := make(chan kafka.Event, 10000)
-
-		if rand.Intn(100) < 60 {
+		isAFailure := rand.Intn(100) < 60
+		if isAFailure {
 			topic := "test-app-input-topic-retry"
-			message := kafka.Message{
-				TopicPartition: kafka.TopicPartition{
-					Topic:     &topic,
-					Partition: kafka.PartitionAny,
-				},
-				Key:     []byte(msg.Key),
-				Value:   []byte(msg.Value),
-				Headers: msg.Headers,
-			}
-
 			fmt.Printf("[RandomProcessApp] Message FAILURE on %s: %s\n", msg.TopicPartition, string(msg.Value))
-
-			producer.Produce(&message, delivery_chan)
-
-			_, error := consumer.CommitMessage(msg)
-			if error != nil {
-				panic(fmt.Sprintf("Commit error: %v (%v)\n", error, msg))
-			}
+			copyMessageTo(topic, msg, producer, consumer)
 		} else {
 			topic := "test-app-output-topic"
-			message := kafka.Message{
-				TopicPartition: kafka.TopicPartition{
-					Topic:     &topic,
-					Partition: kafka.PartitionAny,
-				},
-				Key:     []byte(msg.Key),
-				Value:   []byte(msg.Value),
-				Headers: msg.Headers,
-			}
-
 			fmt.Printf("[RandomProcessApp] Message SUCCESS on %s: %s\n", msg.TopicPartition, string(msg.Value))
-
-			producer.Produce(&message, delivery_chan)
-
-			_, error := consumer.CommitMessage(msg)
-			if error != nil {
-				panic(fmt.Sprintf("Commit error: %v (%v)\n", error, msg))
-			}
+			copyMessageTo(topic, msg, producer, consumer)
 		}
 
+	}
+}
+
+func copyMessageTo(topic string, msg *kafka.Message, producer *kafka.Producer, consumer *kafka.Consumer) {
+	delivery_chan := make(chan kafka.Event, 10000)
+	message := kafka.Message{
+		TopicPartition: kafka.TopicPartition{
+			Topic:     &topic,
+			Partition: kafka.PartitionAny,
+		},
+		Key:     []byte(msg.Key),
+		Value:   []byte(msg.Value),
+		Headers: msg.Headers,
+	}
+
+	producer.Produce(&message, delivery_chan)
+
+	_, error := consumer.CommitMessage(msg)
+	if error != nil {
+		panic(fmt.Sprintf("Commit error: %v (%v)\n", error, msg))
 	}
 }
