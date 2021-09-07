@@ -59,14 +59,14 @@ func StartTestApp() {
 				Headers: msg.Headers,
 			}
 
+			fmt.Printf("[RandomProcessApp] Message FAILURE on %s: %s\n", msg.TopicPartition, string(msg.Value))
+
 			producer.Produce(&message, delivery_chan)
 
 			_, error := consumer.CommitMessage(msg)
 			if error != nil {
 				panic(fmt.Sprintf("Commit error: %v (%v)\n", error, msg))
 			}
-
-			fmt.Printf("[RandomProcessApp] Message FAILURE on %s: %s\n", msg.TopicPartition, string(msg.Value))
 		} else {
 			topic := "test-app-output-topic"
 			message := kafka.Message{
@@ -79,14 +79,14 @@ func StartTestApp() {
 				Headers: msg.Headers,
 			}
 
+			fmt.Printf("[RandomProcessApp] Message SUCCESS on %s: %s\n", msg.TopicPartition, string(msg.Value))
+
 			producer.Produce(&message, delivery_chan)
 
 			_, error := consumer.CommitMessage(msg)
 			if error != nil {
 				panic(fmt.Sprintf("Commit error: %v (%v)\n", error, msg))
 			}
-
-			fmt.Printf("[RandomProcessApp] Message SUCCESS on %s: %s\n", msg.TopicPartition, string(msg.Value))
 		}
 
 	}

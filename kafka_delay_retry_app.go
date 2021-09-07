@@ -50,7 +50,7 @@ func (a *KafkaDelayRetryApp) startConsumingMessages() {
 		}
 
 		a.messageRepository.Create(&sm)
-		fmt.Printf("Stored message %v with duration %v\n", sm.Value, sm.WaitDuration)
+		fmt.Printf("[Retry] Stored message %v with duration %v\n", sm.Value, sm.WaitDuration)
 
 		_, error := a.consumer.CommitMessage(msg)
 		if error != nil {
