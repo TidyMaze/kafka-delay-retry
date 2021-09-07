@@ -105,13 +105,13 @@ func (a *KafkaDelayRetryApp) start() {
 }
 
 func (a *KafkaDelayRetryApp) stop() {
-	fmt.Println("Consumer cleanup")
+	fmt.Println("[Retry] Consumer cleanup")
 	err := a.consumer.Close()
 	if err != nil {
 		panic(fmt.Sprintf("Error closing consumer: %v", err))
 	}
 
-	fmt.Println("Producer cleanup")
+	fmt.Println("[Retry] Producer cleanup")
 	a.producer.Close()
 	if err != nil {
 		panic(fmt.Sprintf("Error closing producer: %v", err))
