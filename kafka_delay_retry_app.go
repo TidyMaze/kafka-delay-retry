@@ -26,14 +26,14 @@ func (a *KafkaDelayRetryApp) startConsumingMessages() {
 			panic(fmt.Sprintf("Consumer error: %v (%v)\n", err, msg))
 		}
 
-		fmt.Printf("[Retry] Message on %s: %s\n", msg.TopicPartition, string(msg.Value))
+		fmt.Printf("[Retry] Message on %s: %s with headers %v\n", msg.TopicPartition, string(msg.Value), msg.Headers)
 
-		// check if message already have a "retry-duration" defined and fallback to 1 else
 		waitDuration := time.Duration(1) * time.Second
 		if msg.Headers != nil {
 			for _, header := range msg.Headers {
 				if string(header.Key) == "retry-duration" {
-					waitDuration = time.Duration(binary.BigEndian.Uint64(header.Value)) * 2 * time.Second
+					intDuration := int64(binary.BigEndian.Uint64(header.Value))
+					waitDuration = time.Duration(intDuration) * 2 * time.Second
 					break
 				}
 			}
@@ -131,6 +131,14 @@ func (a *KafkaDelayRetryApp) startExpiredMessagesPolling() {
 
 			delivery_chan := make(chan kafka.Event, 10000)
 
+			retryDurationHeaderValue := make([]byte, 8)
+
+			durationInt := uint64(message.WaitDuration.Seconds())
+
+			fmt.Printf("serializing duration %v\n", durationInt)
+
+			binary.BigEndian.PutUint64(retryDurationHeaderValue, durationInt)
+
 			a.producer.Produce(&kafka.Message{
 				TopicPartition: kafka.TopicPartition{
 					Topic:     &a.config.outputTopic,
@@ -138,6 +146,12 @@ func (a *KafkaDelayRetryApp) startExpiredMessagesPolling() {
 				},
 				Key:   []byte(message.Key),
 				Value: []byte(message.Value),
+				Headers: []kafka.Header{
+					{
+						Key:   "retry-duration",
+						Value: retryDurationHeaderValue,
+					},
+				},
 			}, delivery_chan)
 
 			a.messageRepository.Delete(message)
