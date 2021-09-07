@@ -3,11 +3,14 @@ package kafka_delay_retry
 import (
 	"fmt"
 	"math/rand"
+	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
 func StartTestApp() {
+	rand.Seed(time.Now().UnixNano())
+
 	fmt.Println("Starting test app")
 	defer func() {
 		fmt.Println("End of test app consumer")
@@ -47,7 +50,7 @@ func StartTestApp() {
 
 		delivery_chan := make(chan kafka.Event, 10000)
 
-		if rand.Intn(3) == 0 {
+		if rand.Intn(100) < 50 {
 			topic := "test-app-input-topic-retry"
 			message := kafka.Message{
 				TopicPartition: kafka.TopicPartition{
