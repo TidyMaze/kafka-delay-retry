@@ -15,9 +15,8 @@ type KafkaDelayRetryApp struct {
 	messageRepository *MessageRepository
 }
 
-const (
-	RETRY_HEADER_KEY = "retry-duration"
-)
+const RETRY_HEADER_KEY = "retry-duration"
+const APP_NAME = "kafka-delay-retry"
 
 func (a *KafkaDelayRetryApp) startConsumingMessages() {
 	fmt.Println("Starting consumer")
@@ -76,8 +75,8 @@ func (a *KafkaDelayRetryApp) start() {
 
 	newConsumer, err := kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers":  a.config.bootstrapServers,
-		"group.id":           "kafka-delay-retry",
-		"client.id":          "kafka-delay-retry",
+		"group.id":           APP_NAME,
+		"client.id":          APP_NAME,
 		"auto.offset.reset":  "earliest",
 		"enable.auto.commit": "false",
 	})
@@ -90,7 +89,7 @@ func (a *KafkaDelayRetryApp) start() {
 
 	newProducer, err := kafka.NewProducer(&kafka.ConfigMap{
 		"bootstrap.servers": a.config.bootstrapServers,
-		"client.id":         "kafka-delay-retry",
+		"client.id":         APP_NAME,
 	})
 
 	if err != nil {
