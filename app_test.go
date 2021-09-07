@@ -12,12 +12,11 @@ import (
 // testing main app
 func TestApp(t *testing.T) {
 	inputTopic := "test-app-input-topic"
-	retryTopic := "test-app-input-topic-retry"
+	retryTopic := "^.*-retry"
 	outputTopic := "test-app-output-topic"
 
 	config := KafkaDelayRetryConfig{
 		inputTopic:       retryTopic,
-		outputTopic:      inputTopic,
 		bootstrapServers: "localhost:29092",
 	}
 

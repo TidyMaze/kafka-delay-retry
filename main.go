@@ -3,8 +3,7 @@ package kafka_delay_retry
 func main() {
 	app := KafkaDelayRetryApp{
 		config: KafkaDelayRetryConfig{
-			inputTopic:       "test",
-			outputTopic:      "test-output",
+			inputTopic:       "^.*-retry",
 			bootstrapServers: "localhost:9092",
 		},
 	}

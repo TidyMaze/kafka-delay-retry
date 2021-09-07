@@ -137,9 +137,11 @@ func (a *KafkaDelayRetryApp) startExpiredMessagesPolling() {
 
 			retryDurationHeaderValue := strconv.Itoa(int(message.WaitDuration.Milliseconds()))
 
+			outputTopic := message.Topic[:len(message.Topic)-len("-retry")]
+
 			a.producer.Produce(&kafka.Message{
 				TopicPartition: kafka.TopicPartition{
-					Topic:     &a.config.outputTopic,
+					Topic:     &outputTopic,
 					Partition: kafka.PartitionAny,
 				},
 				Key:   []byte(message.Key),
