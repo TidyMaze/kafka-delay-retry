@@ -153,7 +153,6 @@ func (a *KafkaDelayRetryApp) startExpiredMessagesPolling() {
 			}, delivery_chan)
 
 			a.messageRepository.Delete(message)
-			fmt.Printf("[Retry] Deleted message %v\n", message.Value)
 		}
 		time.Sleep(time.Millisecond * 100)
 	}
