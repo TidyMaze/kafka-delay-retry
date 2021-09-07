@@ -8,7 +8,7 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
-func StartTestApp(inputTopic string, outputTopic string) {
+func StartTestApp(inputTopic string, outputTopic string, bootstrapServers string) {
 	rand.Seed(time.Now().UnixNano())
 
 	fmt.Println("Starting test app")
@@ -17,7 +17,7 @@ func StartTestApp(inputTopic string, outputTopic string) {
 	}()
 
 	consumer, err := kafka.NewConsumer(&kafka.ConfigMap{
-		"bootstrap.servers":  "localhost:29092",
+		"bootstrap.servers":  bootstrapServers,
 		"group.id":           "test-app",
 		"client.id":          "test-app",
 		"auto.offset.reset":  "earliest",
@@ -29,7 +29,7 @@ func StartTestApp(inputTopic string, outputTopic string) {
 	}
 
 	producer, err := kafka.NewProducer(&kafka.ConfigMap{
-		"bootstrap.servers": "localhost:29092",
+		"bootstrap.servers": bootstrapServers,
 		"client.id":         "test-app",
 	})
 

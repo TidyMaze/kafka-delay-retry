@@ -31,7 +31,7 @@ func TestApp(t *testing.T) {
 
 	produceTestMessages(inputTopic, sizeProduced)
 
-	go StartTestApp(inputTopic, outputTopic)
+	go StartTestApp(inputTopic, outputTopic, config.bootstrapServers)
 
 	messages := expectMessages(t, outputTopic, 5*time.Minute, sizeProduced)
 
