@@ -16,7 +16,6 @@ type KafkaDelayRetryApp struct {
 }
 
 func (a *KafkaDelayRetryApp) startConsumingMessages() {
-	// show start of consumer
 	fmt.Println("Starting consumer")
 	defer func() {
 		fmt.Println("End of consumer")
@@ -29,7 +28,6 @@ func (a *KafkaDelayRetryApp) startConsumingMessages() {
 
 		fmt.Printf("Message on %s: %s\n", msg.TopicPartition, string(msg.Value))
 
-		// random wait duration between 1 and 5 seconds
 		waitDuration := time.Duration(1+rand.Intn(4)) * time.Second
 
 		sm := StoredMessage{
@@ -43,18 +41,7 @@ func (a *KafkaDelayRetryApp) startConsumingMessages() {
 		}
 
 		a.messageRepository.Create(&sm)
-		// log stored message value with wait duration
 		fmt.Printf("Stored message %v with duration %v\n", sm.Value, sm.WaitDuration)
-
-		// delivery_chan := make(chan kafka.Event, 10000)
-		// a.producer.Produce(&kafka.Message{
-		// 	TopicPartition: kafka.TopicPartition{
-		// 		Topic:     &a.config.outputTopic,
-		// 		Partition: kafka.PartitionAny,
-		// 	},
-		// 	Key:   msg.Key,
-		// 	Value: msg.Value,
-		// }, delivery_chan)
 
 		_, error := a.consumer.CommitMessage(msg)
 		if error != nil {
@@ -130,7 +117,6 @@ func (a *KafkaDelayRetryApp) startExpiredMessagesPolling() {
 	for {
 		expiredMessages := a.messageRepository.FindAllExpired()
 
-		// log all expired messages
 		for _, expiredMessage := range expiredMessages {
 			fmt.Printf("Expired message %v with duration %v\n", expiredMessage.Value, expiredMessage.WaitDuration)
 		}
