@@ -19,14 +19,14 @@ const RETRY_HEADER_KEY = "retry-duration"
 const APP_NAME = "kafka-delay-retry"
 
 func (a *KafkaDelayRetryApp) startConsumingMessages() {
-	fmt.Println("Starting consumer")
+	fmt.Println("[Retry] Starting consumer")
 	defer func() {
-		fmt.Println("End of consumer")
+		fmt.Println("[Retry] End of consumer")
 	}()
 	for {
 		msg, err := a.consumer.ReadMessage(-1)
 		if err != nil {
-			panic(fmt.Sprintf("Consumer error: %v (%v)\n", err, msg))
+			panic(fmt.Sprintf("[Retry] Consumer error: %v (%v)\n", err, msg))
 		}
 
 		fmt.Printf("[Retry] Message on %s: %s with headers %v\n", msg.TopicPartition, string(msg.Value), msg.Headers)
@@ -57,7 +57,7 @@ func (a *KafkaDelayRetryApp) startConsumingMessages() {
 
 		_, error := a.consumer.CommitMessage(msg)
 		if error != nil {
-			panic(fmt.Sprintf("Commit error: %v (%v)\n", error, msg))
+			panic(fmt.Sprintf("[Retry] Commit error: %v (%v)\n", error, msg))
 		}
 	}
 
@@ -66,12 +66,12 @@ func (a *KafkaDelayRetryApp) startConsumingMessages() {
 func (a *KafkaDelayRetryApp) subscribeTopics() {
 	err := a.consumer.SubscribeTopics([]string{a.config.inputTopic}, nil)
 	if err != nil {
-		panic(fmt.Sprintf("Failed to subscribe to topic: %s\n", err))
+		panic(fmt.Sprintf("[Retry] Failed to subscribe to topic: %s\n", err))
 	}
 }
 
 func (a *KafkaDelayRetryApp) start() {
-	fmt.Println("Starting app")
+	fmt.Println("[Retry] Starting app")
 
 	newConsumer, err := kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers":  a.config.bootstrapServers,
@@ -82,7 +82,7 @@ func (a *KafkaDelayRetryApp) start() {
 	})
 
 	if err != nil {
-		panic(fmt.Sprintf("Failed to create consumer: %s\n", err))
+		panic(fmt.Sprintf("[Retry] Failed to create consumer: %s\n", err))
 	}
 
 	a.consumer = newConsumer
@@ -93,7 +93,7 @@ func (a *KafkaDelayRetryApp) start() {
 	})
 
 	if err != nil {
-		panic(fmt.Sprintf("Failed to create producer: %s\n", err))
+		panic(fmt.Sprintf("[Retry] Failed to create producer: %s\n", err))
 	}
 
 	a.producer = newProducer
@@ -108,13 +108,13 @@ func (a *KafkaDelayRetryApp) stop() {
 	fmt.Println("[Retry] Consumer cleanup")
 	err := a.consumer.Close()
 	if err != nil {
-		panic(fmt.Sprintf("Error closing consumer: %v", err))
+		panic(fmt.Sprintf("[Retry] Error closing consumer: %v", err))
 	}
 
 	fmt.Println("[Retry] Producer cleanup")
 	a.producer.Close()
 	if err != nil {
-		panic(fmt.Sprintf("Error closing producer: %v", err))
+		panic(fmt.Sprintf("[Retry] Error closing producer: %v", err))
 	}
 }
 
