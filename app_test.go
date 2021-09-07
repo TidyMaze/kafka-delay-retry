@@ -11,9 +11,13 @@ import (
 
 // testing main app
 func TestApp(t *testing.T) {
+	inputTopic := "test-app-input-topic"
+	retryTopic := "test-app-input-topic-retry"
+	outputTopic := "test-app-output-topic"
+
 	config := KafkaDelayRetryConfig{
-		inputTopic:       "test",
-		outputTopic:      "test-output",
+		inputTopic:       retryTopic,
+		outputTopic:      inputTopic,
 		bootstrapServers: "localhost:29092",
 	}
 
@@ -22,8 +26,12 @@ func TestApp(t *testing.T) {
 	app.messageRepository.Truncate()
 
 	app.start()
-	produceTestMessages(config.inputTopic)
-	messages := readMessages(config.outputTopic, 1*time.Second)
+
+	produceTestMessages(inputTopic)
+
+	go StartTestApp()
+
+	messages := readMessages(outputTopic, 1*time.Second)
 	app.stop()
 
 	assert.Len(t, messages, 10)

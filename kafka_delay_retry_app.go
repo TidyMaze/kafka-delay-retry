@@ -117,12 +117,8 @@ func (a *KafkaDelayRetryApp) startExpiredMessagesPolling() {
 	for {
 		expiredMessages := a.messageRepository.FindAllExpired()
 
-		for _, expiredMessage := range expiredMessages {
-			fmt.Printf("Expired message %v with duration %v\n", expiredMessage.Value, expiredMessage.WaitDuration)
-		}
-
 		for _, message := range expiredMessages {
-			fmt.Printf("Retrying message %v\n", message.Value)
+			fmt.Printf("Retrying expired message %v with duration %v\n", message.Value, message.WaitDuration)
 
 			delivery_chan := make(chan kafka.Event, 10000)
 
