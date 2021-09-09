@@ -3,6 +3,7 @@ package kafka_delay_retry
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"strconv"
 	"time"
 
@@ -42,7 +43,9 @@ func (a *KafkaDelayRetryApp) startConsumingMessages(ctx context.Context) {
 				for _, header := range msg.Headers {
 					if string(header.Key) == RETRY_HEADER_KEY {
 						intDuration, _ := strconv.Atoi(string(header.Value))
-						waitDuration = time.Duration(intDuration) * 2 * time.Millisecond
+						// random duration offset between 0 and 1000ms
+						offset := time.Duration(intDuration+int(time.Duration(rand.Intn(1000)))) * time.Millisecond
+						waitDuration = time.Duration(intDuration)*2*time.Millisecond + offset
 						break
 					}
 				}
