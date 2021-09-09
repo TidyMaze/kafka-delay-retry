@@ -94,7 +94,7 @@ func expectMessages(t assert.TestingT, topic string, maxWaitForMessage time.Dura
 			}
 
 			if len(unique(values)) != len(values) {
-				assert.Fail(t, "Duplicate message received")
+				assert.FailNow(t, "Duplicate messages found%v\n", values)
 			}
 
 			if len(messages) == expectedSize {
