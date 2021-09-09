@@ -64,7 +64,7 @@ func TestApp(t *testing.T) {
 
 	app.messageRepository.Truncate()
 
-	sizeProduced := 10000
+	sizeProduced := 1000
 
 	produceTestMessages(inputTopic, sizeProduced)
 
