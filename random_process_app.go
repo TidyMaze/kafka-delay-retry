@@ -11,10 +11,17 @@ import (
 func StartTestApp(inputTopic string, outputTopic string, bootstrapServers string) {
 	rand.Seed(time.Now().UnixNano())
 
+	retryTopic := inputTopic + "-retry"
+
 	fmt.Println("Starting test app")
 	defer func() {
 		fmt.Println("End of test app consumer")
 	}()
+
+	// adminClient, err := kafka.NewAdminClient(&kafka.ConfigMap{"bootstrap.servers": bootstrapServers})
+	// ctx := context.newCancelCtx()
+
+	// results, err := adminClient.CreateTopics()
 
 	consumer, err := kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers":  bootstrapServers,
@@ -50,7 +57,7 @@ func StartTestApp(inputTopic string, outputTopic string, bootstrapServers string
 
 		isAFailure := rand.Intn(100) < 60
 		if isAFailure {
-			topic := inputTopic + "-retry"
+			topic := retryTopic
 			fmt.Printf("[RandomProcessApp] Message FAILURE on %s: %s\n", msg.TopicPartition, string(msg.Value))
 			copyMessageTo(topic, msg, producer, consumer)
 		} else {

@@ -129,6 +129,8 @@ func (a *KafkaDelayRetryApp) startExpiredMessagesPolling() {
 	for {
 		expiredMessages := a.messageRepository.FindAllExpired()
 
+		fmt.Printf("[Retry] =========== New batch of %v messages\n", len(expiredMessages))
+
 		for _, message := range expiredMessages {
 			fmt.Printf("[Retry] Retrying expired message %v with duration %v\n", message.Value, message.WaitDuration)
 
@@ -155,6 +157,6 @@ func (a *KafkaDelayRetryApp) startExpiredMessagesPolling() {
 
 			a.messageRepository.Delete(message)
 		}
-		time.Sleep(time.Millisecond * 100)
+		time.Sleep(time.Millisecond * 1000)
 	}
 }

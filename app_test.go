@@ -9,6 +9,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func unique(slice []string) []string {
+	keys := make(map[string]bool)
+	list := []string{}
+	for _, entry := range slice {
+		if _, value := keys[entry]; !value {
+			keys[entry] = true
+			list = append(list, entry)
+		}
+	}
+	return list
+}
+
 // testing main app
 func TestApp(t *testing.T) {
 	inputTopic := "test-app-input-topic"
@@ -24,13 +36,13 @@ func TestApp(t *testing.T) {
 
 	app.messageRepository.Truncate()
 
-	app.start()
-
-	sizeProduced := 100
+	sizeProduced := 10
 
 	produceTestMessages(inputTopic, sizeProduced)
 
 	go StartTestApp(inputTopic, outputTopic, config.bootstrapServers)
+
+	app.start()
 
 	messages := expectMessages(t, outputTopic, 5*time.Minute, sizeProduced)
 
@@ -75,6 +87,15 @@ func expectMessages(t assert.TestingT, topic string, maxWaitForMessage time.Dura
 		} else if err == nil {
 			fmt.Printf("[readMessages] Received message in topic %s: %s\n", topic, string(msg.Value))
 			messages = append(messages, *msg)
+
+			values := []string{}
+			for _, msg := range messages {
+				values = append(values, string(msg.Value))
+			}
+
+			if len(unique(values)) != len(values) {
+				assert.Fail(t, "Duplicate message received")
+			}
 
 			if len(messages) == expectedSize {
 				return messages
