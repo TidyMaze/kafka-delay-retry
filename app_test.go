@@ -1,6 +1,7 @@
 package kafka_delay_retry
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"testing"
@@ -31,6 +32,32 @@ func TestApp(t *testing.T) {
 	config := KafkaDelayRetryConfig{
 		inputTopic:       retryTopic,
 		bootstrapServers: "localhost:29092",
+	}
+
+	conf := kafka.ConfigMap{"bootstrap.servers": config.bootstrapServers}
+
+	client, err := kafka.NewAdminClient(&conf)
+
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create client: %s\n", err))
+	}
+
+	ctx := context.Background()
+
+	res, err := client.CreateTopics(ctx, []kafka.TopicSpecification{
+		{Topic: inputTopic, NumPartitions: 1, ReplicationFactor: 1},
+		{Topic: outputTopic, NumPartitions: 1, ReplicationFactor: 1},
+		{Topic: inputTopic + "-retry", NumPartitions: 1, ReplicationFactor: 1},
+	})
+
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create topics: %s\n", err))
+	}
+
+	for _, v := range res {
+		if v.Error.Code() != kafka.ErrNoError {
+			panic(fmt.Sprintf("Failed to create topics: %s %s\n", v.Topic, err))
+		}
 	}
 
 	app := NewKafkaDelayRetryApp(config)
