@@ -1,6 +1,7 @@
 package kafka_delay_retry
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"time"
@@ -18,46 +19,51 @@ type KafkaDelayRetryApp struct {
 const RETRY_HEADER_KEY = "retry-duration"
 const APP_NAME = "kafka-delay-retry"
 
-func (a *KafkaDelayRetryApp) startConsumingMessages() {
+func (a *KafkaDelayRetryApp) startConsumingMessages(ctx context.Context) {
 	fmt.Println("[Retry] Starting consumer")
 	defer func() {
 		fmt.Println("[Retry] End of consumer")
 	}()
 	for {
-		msg, err := a.consumer.ReadMessage(-1)
-		if err != nil {
-			panic(fmt.Sprintf("[Retry] Consumer error: %v (%v)\n", err, msg))
-		}
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			msg, err := a.consumer.ReadMessage(-1)
+			if err != nil {
+				panic(fmt.Sprintf("[Retry] Consumer error: %v (%v)\n", err, msg))
+			}
 
-		fmt.Printf("[Retry] Message on %s: %s with headers %v\n", msg.TopicPartition, string(msg.Value), msg.Headers)
+			fmt.Printf("[Retry] Message on %s: %s with headers %v\n", msg.TopicPartition, string(msg.Value), msg.Headers)
 
-		waitDuration := time.Duration(100) * time.Millisecond
-		if msg.Headers != nil {
-			for _, header := range msg.Headers {
-				if string(header.Key) == RETRY_HEADER_KEY {
-					intDuration, _ := strconv.Atoi(string(header.Value))
-					waitDuration = time.Duration(intDuration) * 2 * time.Millisecond
-					break
+			waitDuration := time.Duration(100) * time.Millisecond
+			if msg.Headers != nil {
+				for _, header := range msg.Headers {
+					if string(header.Key) == RETRY_HEADER_KEY {
+						intDuration, _ := strconv.Atoi(string(header.Value))
+						waitDuration = time.Duration(intDuration) * 2 * time.Millisecond
+						break
+					}
 				}
 			}
-		}
 
-		sm := StoredMessage{
-			Key:          string(msg.Key),
-			Value:        string(msg.Value),
-			Topic:        *msg.TopicPartition.Topic,
-			Partition:    msg.TopicPartition.Partition,
-			Offset:       msg.TopicPartition.Offset,
-			WaitDuration: waitDuration,
-			WaitUntil:    time.Now().Add(waitDuration),
-		}
+			sm := StoredMessage{
+				Key:          string(msg.Key),
+				Value:        string(msg.Value),
+				Topic:        *msg.TopicPartition.Topic,
+				Partition:    msg.TopicPartition.Partition,
+				Offset:       msg.TopicPartition.Offset,
+				WaitDuration: waitDuration,
+				WaitUntil:    time.Now().Add(waitDuration),
+			}
 
-		a.messageRepository.Create(&sm)
-		fmt.Printf("[Retry] Stored message %v with duration %v\n", sm.Value, sm.WaitDuration)
+			a.messageRepository.Create(&sm)
+			fmt.Printf("[Retry] Stored message %v with duration %v\n", sm.Value, sm.WaitDuration)
 
-		_, error := a.consumer.CommitMessage(msg)
-		if error != nil {
-			panic(fmt.Sprintf("[Retry] Commit error: %v (%v)\n", error, msg))
+			_, error := a.consumer.CommitMessage(msg)
+			if error != nil {
+				panic(fmt.Sprintf("[Retry] Commit error: %v (%v)\n", error, msg))
+			}
 		}
 	}
 
@@ -100,8 +106,10 @@ func (a *KafkaDelayRetryApp) start() {
 
 	a.subscribeTopics()
 
-	go a.startExpiredMessagesPolling()
-	go a.startConsumingMessages()
+	ctx := context.Background()
+
+	go a.startExpiredMessagesPolling(ctx)
+	go a.startConsumingMessages(ctx)
 }
 
 func (a *KafkaDelayRetryApp) stop() {
@@ -125,38 +133,44 @@ func NewKafkaDelayRetryApp(config KafkaDelayRetryConfig) *KafkaDelayRetryApp {
 	}
 }
 
-func (a *KafkaDelayRetryApp) startExpiredMessagesPolling() {
+func (a *KafkaDelayRetryApp) startExpiredMessagesPolling(ctx context.Context) {
 	for {
-		expiredMessages := a.messageRepository.FindAllExpired()
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			expiredMessages := a.messageRepository.FindAllExpired()
 
-		fmt.Printf("[Retry] =========== New batch of %v messages\n", len(expiredMessages))
+			fmt.Printf("[Retry] =========== New batch of %v messages\n", len(expiredMessages))
 
-		for _, message := range expiredMessages {
-			fmt.Printf("[Retry] Retrying expired message %v with duration %v\n", message.Value, message.WaitDuration)
+			for _, message := range expiredMessages {
+				fmt.Printf("[Retry] Retrying expired message %v with duration %v\n", message.Value, message.WaitDuration)
 
-			delivery_chan := make(chan kafka.Event, 10000)
+				delivery_chan := make(chan kafka.Event, 10000)
 
-			retryDurationHeaderValue := strconv.Itoa(int(message.WaitDuration.Milliseconds()))
+				retryDurationHeaderValue := strconv.Itoa(int(message.WaitDuration.Milliseconds()))
 
-			outputTopic := message.Topic[:len(message.Topic)-len("-retry")]
+				outputTopic := message.Topic[:len(message.Topic)-len("-retry")]
 
-			a.producer.Produce(&kafka.Message{
-				TopicPartition: kafka.TopicPartition{
-					Topic:     &outputTopic,
-					Partition: kafka.PartitionAny,
-				},
-				Key:   []byte(message.Key),
-				Value: []byte(message.Value),
-				Headers: []kafka.Header{
-					{
-						Key:   RETRY_HEADER_KEY,
-						Value: []byte(retryDurationHeaderValue),
+				a.producer.Produce(&kafka.Message{
+					TopicPartition: kafka.TopicPartition{
+						Topic:     &outputTopic,
+						Partition: kafka.PartitionAny,
 					},
-				},
-			}, delivery_chan)
+					Key:   []byte(message.Key),
+					Value: []byte(message.Value),
+					Headers: []kafka.Header{
+						{
+							Key:   RETRY_HEADER_KEY,
+							Value: []byte(retryDurationHeaderValue),
+						},
+					},
+				}, delivery_chan)
 
-			a.messageRepository.Delete(message)
+				a.messageRepository.Delete(message)
+			}
 		}
+
 		time.Sleep(time.Millisecond * 1000)
 	}
 }
