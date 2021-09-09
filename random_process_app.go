@@ -19,11 +19,6 @@ func StartTestApp(ctx context.Context, inputTopic string, outputTopic string, bo
 		fmt.Println("End of test app consumer")
 	}()
 
-	// adminClient, err := kafka.NewAdminClient(&kafka.ConfigMap{"bootstrap.servers": bootstrapServers})
-	// ctx := context.newCancelCtx()
-
-	// results, err := adminClient.CreateTopics()
-
 	consumer, err := kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers":  bootstrapServers,
 		"group.id":           "test-app",
