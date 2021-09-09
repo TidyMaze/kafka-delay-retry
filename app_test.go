@@ -46,11 +46,11 @@ func TestApp(t *testing.T) {
 
 	messages := expectMessages(t, outputTopic, 5*time.Minute, sizeProduced)
 
+	app.stop()
+
 	for _, msg := range messages {
 		fmt.Printf("%s\n", msg.Value)
 	}
-
-	app.stop()
 }
 
 func expectMessages(t assert.TestingT, topic string, maxWaitForMessage time.Duration, expectedSize int) []kafka.Message {
