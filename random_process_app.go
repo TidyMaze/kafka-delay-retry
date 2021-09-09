@@ -56,6 +56,7 @@ func StartTestApp(ctx context.Context, inputTopic string, outputTopic string, bo
 			fmt.Printf("[RandomProcessApp] Exiting loop\n")
 			consumer.Close()
 			producer.Close()
+			return
 		default:
 			msg, err := consumer.ReadMessage(-1)
 			if err != nil {
