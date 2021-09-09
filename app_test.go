@@ -2,6 +2,7 @@ package kafka_delay_retry
 
 import (
 	"fmt"
+	"sort"
 	"testing"
 	"time"
 
@@ -44,16 +45,12 @@ func TestApp(t *testing.T) {
 
 	app.start()
 
-	messages := expectMessages(t, outputTopic, 5*time.Minute, sizeProduced)
+	expectMessages(t, outputTopic, 5*time.Minute, sizeProduced)
 
 	app.stop()
-
-	for _, msg := range messages {
-		fmt.Printf("%s\n", msg.Value)
-	}
 }
 
-func expectMessages(t assert.TestingT, topic string, maxWaitForMessage time.Duration, expectedSize int) []kafka.Message {
+func expectMessages(t assert.TestingT, topic string, maxWaitForMessage time.Duration, expectedSize int) {
 	c, err := kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers": "localhost:29092",
 		"group.id":          "test-consumer",
@@ -77,30 +74,31 @@ func expectMessages(t assert.TestingT, topic string, maxWaitForMessage time.Dura
 		panic(fmt.Sprintf("Failed to subscribe to topic: %s\n", err))
 	}
 
-	messages := make([]kafka.Message, 0)
+	values := []string{}
 
 	for {
 		msg, err := c.ReadMessage(maxWaitForMessage)
 
 		if err != nil && err.(kafka.Error).Code() == kafka.ErrTimedOut {
-			return messages
+			assert.Fail(t, "should have returned before with all values")
+			return
 		} else if err == nil {
-			fmt.Printf("[readMessages] Received message in topic %s: %s\n", topic, string(msg.Value))
-			messages = append(messages, *msg)
+			fmt.Printf("[readMessages] Received message in topic %s: %s (%v yet)\n", topic, string(msg.Value), len(values))
 
-			values := []string{}
-			for _, msg := range messages {
-				values = append(values, string(msg.Value))
+			for _, msg := range values {
+				values = append(values, string(msg))
 			}
+
+			sort.Strings(values)
 
 			if len(unique(values)) != len(values) {
 				assert.FailNow(t, "Duplicate messages found%v\n", values)
 			}
 
-			if len(messages) == expectedSize {
-				return messages
-			} else if len(messages) > expectedSize {
-				assert.Fail(t, fmt.Sprintf("Expected %d messages, but got %d\n", expectedSize, len(messages)))
+			if len(values) == expectedSize {
+				return
+			} else if len(values) > expectedSize {
+				assert.Fail(t, fmt.Sprintf("Expected %d messages, but got %d\n", expectedSize, len(values)))
 			}
 		} else {
 			panic(fmt.Sprintf("Failed to read message: %s\n", err))
