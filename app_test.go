@@ -39,7 +39,7 @@ func TestApp(t *testing.T) {
 	client, err := kafka.NewAdminClient(&conf)
 
 	if err != nil {
-		panic(fmt.Sprintf("Failed to create client: %s\n", err))
+		panic(fmt.Sprintf("Failed to create client: %v\n", err))
 	}
 
 	ctx := context.Background()
@@ -56,7 +56,7 @@ func TestApp(t *testing.T) {
 
 	for _, v := range res {
 		if v.Error.Code() != kafka.ErrNoError {
-			panic(fmt.Sprintf("Failed to create topics: %s %s\n", v.Topic, err))
+			panic(fmt.Sprintf("Failed to create topic %s: %s\n", v.Topic, v.Error))
 		}
 	}
 
