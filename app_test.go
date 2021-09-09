@@ -83,11 +83,9 @@ func expectMessages(t assert.TestingT, topic string, maxWaitForMessage time.Dura
 			assert.Fail(t, "should have returned before with all values")
 			return
 		} else if err == nil {
-			fmt.Printf("[readMessages] Received message in topic %s: %s (%v yet)\n", topic, string(msg.Value), len(values))
+			fmt.Printf("[readMessages] Received message in topic %s: %s (%d yet)\n", topic, string(msg.Value), len(values))
 
-			for _, msg := range values {
-				values = append(values, string(msg))
-			}
+			values = append(values, string(msg.Value))
 
 			sort.Strings(values)
 
