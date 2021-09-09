@@ -68,13 +68,17 @@ func TestApp(t *testing.T) {
 
 	produceTestMessages(inputTopic, sizeProduced)
 
-	go StartTestApp(inputTopic, outputTopic, config.bootstrapServers)
+	ctx2, cancelFn := context.WithCancel(ctx)
+
+	go StartTestApp(ctx2, inputTopic, outputTopic, config.bootstrapServers)
 
 	app.start()
 
 	expectMessages(t, outputTopic, 5*time.Minute, sizeProduced)
 
 	app.stop()
+
+	cancelFn()
 }
 
 func expectMessages(t assert.TestingT, topic string, maxWaitForMessage time.Duration, expectedSize int) {

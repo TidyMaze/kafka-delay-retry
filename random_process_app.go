@@ -1,6 +1,7 @@
 package kafka_delay_retry
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"time"
@@ -8,7 +9,7 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
-func StartTestApp(inputTopic string, outputTopic string, bootstrapServers string) {
+func StartTestApp(ctx context.Context, inputTopic string, outputTopic string, bootstrapServers string) {
 	rand.Seed(time.Now().UnixNano())
 
 	retryTopic := inputTopic + "-retry"
@@ -50,22 +51,28 @@ func StartTestApp(inputTopic string, outputTopic string, bootstrapServers string
 	}
 
 	for {
-		msg, err := consumer.ReadMessage(-1)
-		if err != nil {
-			panic(fmt.Sprintf("Consumer error: %v (%v)\n", err, msg))
-		}
+		select {
+		case <-ctx.Done():
+			fmt.Printf("[RandomProcessApp] Exiting loop\n")
+			consumer.Close()
+			producer.Close()
+		default:
+			msg, err := consumer.ReadMessage(-1)
+			if err != nil {
+				panic(fmt.Sprintf("Consumer error: %v (%v)\n", err, msg))
+			}
 
-		isAFailure := rand.Intn(100) < 60
-		if isAFailure {
-			topic := retryTopic
-			fmt.Printf("[RandomProcessApp] Message FAILURE on %s: %s\n", msg.TopicPartition, string(msg.Value))
-			copyMessageTo(topic, msg, producer, consumer)
-		} else {
-			topic := outputTopic
-			fmt.Printf("[RandomProcessApp] Message SUCCESS on %s: %s\n", msg.TopicPartition, string(msg.Value))
-			copyMessageTo(topic, msg, producer, consumer)
+			isAFailure := rand.Intn(100) < 60
+			if isAFailure {
+				topic := retryTopic
+				fmt.Printf("[RandomProcessApp] Message FAILURE on %s: %s\n", msg.TopicPartition, string(msg.Value))
+				copyMessageTo(topic, msg, producer, consumer)
+			} else {
+				topic := outputTopic
+				fmt.Printf("[RandomProcessApp] Message SUCCESS on %s: %s\n", msg.TopicPartition, string(msg.Value))
+				copyMessageTo(topic, msg, producer, consumer)
+			}
 		}
-
 	}
 }
 
