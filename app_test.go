@@ -55,8 +55,8 @@ func TestApp(t *testing.T) {
 	}
 
 	for _, v := range res {
-		if v.Error.Code() != kafka.ErrNoError {
-			panic(fmt.Sprintf("Failed to create topic %s: %s\n", v.Topic, v.Error))
+		if v.Error.Code() != kafka.ErrNoError && v.Error.Code() != kafka.ErrTopicAlreadyExists {
+			panic(fmt.Sprintf("Failed to create topic %s: %d %s\n", v.Topic, v.Error.Code(), v.Error))
 		}
 	}
 
