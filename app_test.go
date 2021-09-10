@@ -78,6 +78,8 @@ func TestApp(t *testing.T) {
 
 	app.stop()
 
+	fmt.Println("Canceling test app")
+
 	cancelFn()
 }
 
