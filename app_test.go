@@ -81,6 +81,11 @@ func TestApp(t *testing.T) {
 	fmt.Println("Canceling test app")
 
 	cancelFn()
+
+	select {
+	case <-ctx2.Done():
+		fmt.Println("Happy end")
+	}
 }
 
 func expectMessages(t assert.TestingT, topic string, maxWaitForMessage time.Duration, expectedSize int) {

@@ -148,7 +148,7 @@ func (a *KafkaDelayRetryApp) startExpiredMessagesPolling(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		default:
-			expiredMessages := a.messageRepository.FindAllExpired()
+			expiredMessages := a.messageRepository.FindAllExpired(10)
 
 			if len(expiredMessages) > 0 {
 				fmt.Printf("[Retry] =========== New batch of %v messages\n", len(expiredMessages))

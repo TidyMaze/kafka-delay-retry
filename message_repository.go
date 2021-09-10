@@ -69,9 +69,9 @@ func (mr *MessageRepository) FindById(id int) StoredMessage {
 }
 
 // find all stored messages who WaitUntil is less than or equal to now
-func (mr *MessageRepository) FindAllExpired() []StoredMessage {
+func (mr *MessageRepository) FindAllExpired(limit int) []StoredMessage {
 	var msgs []StoredMessage
-	err := mr.db.Where("wait_until <= ?", time.Now()).Find(&msgs).Error
+	err := mr.db.Where("wait_until <= ?", time.Now()).Order("wait_until ASC").Limit(limit).Find(&msgs).Error
 	if err != nil {
 		panic(fmt.Sprintf("Error finding messages: %v", err))
 	}
