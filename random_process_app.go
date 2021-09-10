@@ -58,7 +58,7 @@ func StartTestApp(ctx context.Context, inputTopic string, outputTopic string, bo
 				panic(fmt.Sprintf("Consumer error: %v (%v)\n", err, msg))
 			}
 
-			isAFailure := rand.Intn(100) < 50
+			isAFailure := rand.Intn(100) < 30
 			if isAFailure {
 				topic := retryTopic
 				fmt.Printf("[RandomProcessApp] Message FAILURE on %s: %s\n", msg.TopicPartition, string(msg.Value))
