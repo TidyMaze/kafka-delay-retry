@@ -3,7 +3,6 @@ package kafka_delay_retry
 import (
 	"context"
 	"fmt"
-	"math/rand"
 	"strconv"
 	"time"
 
@@ -43,9 +42,7 @@ func (a *KafkaDelayRetryApp) startConsumingMessages(ctx context.Context) {
 				for _, header := range msg.Headers {
 					if string(header.Key) == RETRY_HEADER_KEY {
 						intDuration, _ := strconv.Atoi(string(header.Value))
-						// random duration offset between 0 and 1000ms
-						offset := time.Duration(intDuration+int(time.Duration(rand.Intn(1000)))) * time.Millisecond
-						waitDuration = time.Duration(intDuration)*2*time.Millisecond + offset
+						waitDuration = time.Duration(intDuration) * 2 * time.Millisecond
 						break
 					}
 				}
@@ -148,7 +145,7 @@ func (a *KafkaDelayRetryApp) startExpiredMessagesPolling(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		default:
-			expiredMessages := a.messageRepository.FindAllExpired(10)
+			expiredMessages := a.messageRepository.FindAllExpired(1000)
 
 			if len(expiredMessages) > 0 {
 				fmt.Printf("[Retry] =========== New batch of %v messages\n", len(expiredMessages))
