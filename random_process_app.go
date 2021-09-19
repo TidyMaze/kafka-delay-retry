@@ -46,7 +46,7 @@ func StartTestApp(ctx context.Context, inputTopic string, outputTopic string, bo
 	}
 
 	defer consumer.Close()
-	defer consumer.Close()
+	defer producer.Close()
 
 	for {
 		select {
