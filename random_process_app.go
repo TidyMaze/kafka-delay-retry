@@ -9,7 +9,7 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
-func StartTestApp(ctx context.Context, inputTopic string, outputTopic string, bootstrapServers string) {
+func StartTestApp(ctx context.Context, inputTopic string, outputTopic string, bootstrapServers string, finished chan bool) {
 	rand.Seed(time.Now().UnixNano())
 
 	retryTopic := inputTopic + "-retry"
@@ -17,6 +17,7 @@ func StartTestApp(ctx context.Context, inputTopic string, outputTopic string, bo
 	fmt.Println("Starting test app")
 	defer func() {
 		fmt.Println("[RandomProcessApp] End of test app consumer")
+		finished <- true
 	}()
 
 	consumer, err := kafka.NewConsumer(&kafka.ConfigMap{

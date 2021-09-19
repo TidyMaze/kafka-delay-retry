@@ -28,9 +28,11 @@ func unique(slice []string) []string {
 func TestApp(t *testing.T) {
 	defer goleak.VerifyNone(t)
 
+	testAppFinished := make(chan bool)
+
 	defer func() {
-		// waiting for all context to cancel
-		time.Sleep(time.Second * 20)
+		fmt.Println("Waiting for testAppFinished")
+		<-testAppFinished
 	}()
 
 	inputTopic := "test-app-input-topic"
@@ -83,7 +85,7 @@ func TestApp(t *testing.T) {
 		cancelFn()
 	}()
 
-	go StartTestApp(ctx2, inputTopic, outputTopic, config.bootstrapServers)
+	go StartTestApp(ctx2, inputTopic, outputTopic, config.bootstrapServers, testAppFinished)
 
 	app.start()
 
