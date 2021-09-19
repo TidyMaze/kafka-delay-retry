@@ -45,8 +45,15 @@ func StartTestApp(ctx context.Context, inputTopic string, outputTopic string, bo
 		panic(fmt.Sprintf("Failed to subscribe to topic: %s\n", err))
 	}
 
-	defer consumer.Close()
-	defer producer.Close()
+	defer func() {
+		fmt.Println("[RandomProcessApp] closing consumer")
+		consumer.Close()
+
+	}()
+	defer func() {
+		fmt.Println("[RandomProcessApp] closing producer")
+		producer.Close()
+	}()
 
 	for {
 		select {
