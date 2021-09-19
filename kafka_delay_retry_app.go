@@ -152,6 +152,9 @@ func NewKafkaDelayRetryApp(config KafkaDelayRetryConfig) *KafkaDelayRetryApp {
 }
 
 func (a *KafkaDelayRetryApp) startExpiredMessagesPolling(ctx context.Context) {
+	defer func() {
+		fmt.Println("[Retry] Expiration polling stopped")
+	}()
 	for {
 		select {
 		case <-ctx.Done():
