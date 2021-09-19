@@ -28,6 +28,11 @@ func unique(slice []string) []string {
 func TestApp(t *testing.T) {
 	defer goleak.VerifyNone(t)
 
+	defer func() {
+		// waiting for all context to cancel
+		time.Sleep(time.Second * 10)
+	}()
+
 	inputTopic := "test-app-input-topic"
 	retryTopic := "^.*-retry"
 	outputTopic := "test-app-output-topic"
@@ -85,8 +90,6 @@ func TestApp(t *testing.T) {
 	defer app.stop()
 
 	expectMessages(t, outputTopic, 5*time.Minute, sizeProduced)
-
-	time.Sleep(5 * time.Second)
 }
 
 func expectMessages(t assert.TestingT, topic string, maxWaitForMessage time.Duration, expectedSize int) {
