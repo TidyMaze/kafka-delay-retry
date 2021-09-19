@@ -30,40 +30,44 @@ func (a *KafkaDelayRetryApp) startConsumingMessages(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		default:
-			msg, err := a.consumer.ReadMessage(-1)
-			if err != nil {
+			msg, err := a.consumer.ReadMessage(1000 * time.Millisecond)
+
+			if err != nil && err.(kafka.Error).Code() == kafka.ErrTimedOut {
+				fmt.Println("[retry] No new message")
+				continue
+			} else if err != nil && err.(kafka.Error).Code() != kafka.ErrTimedOut {
 				panic(fmt.Sprintf("[Retry] Consumer error: %v (%v)\n", err, msg))
-			}
+			} else {
+				fmt.Printf("[Retry] Message on %s: %s with headers %v\n", msg.TopicPartition, string(msg.Value), msg.Headers)
 
-			fmt.Printf("[Retry] Message on %s: %s with headers %v\n", msg.TopicPartition, string(msg.Value), msg.Headers)
-
-			waitDuration := time.Duration(100) * time.Millisecond
-			if msg.Headers != nil {
-				for _, header := range msg.Headers {
-					if string(header.Key) == RETRY_HEADER_KEY {
-						intDuration, _ := strconv.Atoi(string(header.Value))
-						waitDuration = time.Duration(intDuration) * 2 * time.Millisecond
-						break
+				waitDuration := time.Duration(100) * time.Millisecond
+				if msg.Headers != nil {
+					for _, header := range msg.Headers {
+						if string(header.Key) == RETRY_HEADER_KEY {
+							intDuration, _ := strconv.Atoi(string(header.Value))
+							waitDuration = time.Duration(intDuration) * 2 * time.Millisecond
+							break
+						}
 					}
 				}
-			}
 
-			sm := StoredMessage{
-				Key:          string(msg.Key),
-				Value:        string(msg.Value),
-				Topic:        *msg.TopicPartition.Topic,
-				Partition:    msg.TopicPartition.Partition,
-				Offset:       msg.TopicPartition.Offset,
-				WaitDuration: waitDuration,
-				WaitUntil:    time.Now().Add(waitDuration),
-			}
+				sm := StoredMessage{
+					Key:          string(msg.Key),
+					Value:        string(msg.Value),
+					Topic:        *msg.TopicPartition.Topic,
+					Partition:    msg.TopicPartition.Partition,
+					Offset:       msg.TopicPartition.Offset,
+					WaitDuration: waitDuration,
+					WaitUntil:    time.Now().Add(waitDuration),
+				}
 
-			a.messageRepository.Create(&sm)
-			fmt.Printf("[Retry] Stored message %v with duration %v\n", sm.Value, sm.WaitDuration)
+				a.messageRepository.Create(&sm)
+				fmt.Printf("[Retry] Stored message %v with duration %v\n", sm.Value, sm.WaitDuration)
 
-			_, error := a.consumer.CommitMessage(msg)
-			if error != nil {
-				panic(fmt.Sprintf("[Retry] Commit error: %v (%v)\n", error, msg))
+				_, error := a.consumer.CommitMessage(msg)
+				if error != nil {
+					panic(fmt.Sprintf("[Retry] Commit error: %v (%v)\n", error, msg))
+				}
 			}
 		}
 	}
