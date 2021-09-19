@@ -33,7 +33,7 @@ func (a *KafkaDelayRetryApp) startConsumingMessages(ctx context.Context) {
 			msg, err := a.consumer.ReadMessage(1000 * time.Millisecond)
 
 			if err != nil && err.(kafka.Error).Code() == kafka.ErrTimedOut {
-				fmt.Println("[retry] No new message")
+				fmt.Println("[Retry] No new message")
 				continue
 			} else if err != nil && err.(kafka.Error).Code() != kafka.ErrTimedOut {
 				panic(fmt.Sprintf("[Retry] Consumer error: %v (%v)\n", err, msg))
@@ -144,7 +144,7 @@ func (a *KafkaDelayRetryApp) stop() {
 	if err != nil {
 		panic(fmt.Sprintf("[Retry] Error closing inner db: %v", err))
 	}
-	fmt.Println("[retry] Closed DB")
+	fmt.Println("[Retry] Closed DB")
 
 }
 
