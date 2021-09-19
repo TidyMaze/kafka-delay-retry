@@ -130,6 +130,18 @@ func (a *KafkaDelayRetryApp) stop() {
 	if err != nil {
 		panic(fmt.Sprintf("[Retry] Error closing producer: %v", err))
 	}
+
+	innerDb, err := a.messageRepository.db.DB()
+	if err != nil {
+		panic(fmt.Sprintf("[Retry] Error closing inner db: %v", err))
+	}
+	err = innerDb.Close()
+
+	if err != nil {
+		panic(fmt.Sprintf("[Retry] Error closing inner db: %v", err))
+	}
+	fmt.Println("[retry] Closed DB")
+
 }
 
 func NewKafkaDelayRetryApp(config KafkaDelayRetryConfig) *KafkaDelayRetryApp {

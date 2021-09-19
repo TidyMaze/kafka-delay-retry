@@ -9,6 +9,7 @@ import (
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/goleak"
 )
 
 func unique(slice []string) []string {
@@ -25,6 +26,8 @@ func unique(slice []string) []string {
 
 // testing main app
 func TestApp(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	inputTopic := "test-app-input-topic"
 	retryTopic := "^.*-retry"
 	outputTopic := "test-app-output-topic"
@@ -70,17 +73,18 @@ func TestApp(t *testing.T) {
 
 	ctx2, cancelFn := context.WithCancel(ctx)
 
+	defer func() {
+		fmt.Println("cancelFn cleanup")
+		cancelFn()
+	}()
+
 	go StartTestApp(ctx2, inputTopic, outputTopic, config.bootstrapServers)
 
 	app.start()
 
+	defer app.stop()
+
 	expectMessages(t, outputTopic, 5*time.Minute, sizeProduced)
-
-	app.stop()
-
-	fmt.Println("Canceling test app")
-
-	cancelFn()
 }
 
 func expectMessages(t assert.TestingT, topic string, maxWaitForMessage time.Duration, expectedSize int) {
