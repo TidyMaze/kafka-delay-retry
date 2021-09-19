@@ -33,6 +33,7 @@ func TestApp(t *testing.T) {
 	defer func() {
 		fmt.Println("Waiting for testAppFinished")
 		<-testAppFinished
+		close(testAppFinished)
 	}()
 
 	inputTopic := "test-app-input-topic"
