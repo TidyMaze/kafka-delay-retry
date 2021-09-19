@@ -16,7 +16,7 @@ func StartTestApp(ctx context.Context, inputTopic string, outputTopic string, bo
 
 	fmt.Println("Starting test app")
 	defer func() {
-		fmt.Println("End of test app consumer")
+		fmt.Println("[RandomProcessApp] End of test app consumer")
 	}()
 
 	consumer, err := kafka.NewConsumer(&kafka.ConfigMap{
