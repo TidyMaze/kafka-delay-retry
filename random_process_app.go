@@ -46,13 +46,13 @@ func StartTestApp(ctx context.Context, inputTopic string, outputTopic string, bo
 	}
 
 	defer func() {
-		fmt.Println("[RandomProcessApp] closing consumer")
-		consumer.Close()
-
-	}()
-	defer func() {
 		fmt.Println("[RandomProcessApp] closing producer")
 		producer.Close()
+	}()
+
+	defer func() {
+		fmt.Println("[RandomProcessApp] closing consumer")
+		consumer.Close()
 	}()
 
 	for {

@@ -30,7 +30,7 @@ func TestApp(t *testing.T) {
 
 	defer func() {
 		// waiting for all context to cancel
-		time.Sleep(time.Second * 10)
+		time.Sleep(time.Second * 20)
 	}()
 
 	inputTopic := "test-app-input-topic"
