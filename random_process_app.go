@@ -45,28 +45,31 @@ func StartTestApp(ctx context.Context, inputTopic string, outputTopic string, bo
 		panic(fmt.Sprintf("Failed to subscribe to topic: %s\n", err))
 	}
 
+	defer consumer.Close()
+	defer consumer.Close()
+
 	for {
 		select {
 		case <-ctx.Done():
 			fmt.Printf("[RandomProcessApp] Exiting loop\n")
-			consumer.Close()
-			producer.Close()
 			return
 		default:
-			msg, err := consumer.ReadMessage(-1)
-			if err != nil {
+			msg, err := consumer.ReadMessage(1000 * time.Millisecond)
+			if err != nil && err.(kafka.Error).Code() == kafka.ErrTimedOut {
+				continue
+			} else if err != nil {
 				panic(fmt.Sprintf("Consumer error: %v (%v)\n", err, msg))
-			}
-
-			isAFailure := rand.Intn(100) < 30
-			if isAFailure {
-				topic := retryTopic
-				fmt.Printf("[RandomProcessApp] Message FAILURE on %s: %s\n", msg.TopicPartition, string(msg.Value))
-				copyMessageTo(topic, msg, producer, consumer)
 			} else {
-				topic := outputTopic
-				fmt.Printf("[RandomProcessApp] Message SUCCESS on %s: %s\n", msg.TopicPartition, string(msg.Value))
-				copyMessageTo(topic, msg, producer, consumer)
+				isAFailure := rand.Intn(100) < 30
+				if isAFailure {
+					topic := retryTopic
+					fmt.Printf("[RandomProcessApp] Message FAILURE on %s: %s\n", msg.TopicPartition, string(msg.Value))
+					copyMessageTo(topic, msg, producer, consumer)
+				} else {
+					topic := outputTopic
+					fmt.Printf("[RandomProcessApp] Message SUCCESS on %s: %s\n", msg.TopicPartition, string(msg.Value))
+					copyMessageTo(topic, msg, producer, consumer)
+				}
 			}
 		}
 	}
