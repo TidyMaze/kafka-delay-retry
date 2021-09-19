@@ -85,6 +85,8 @@ func TestApp(t *testing.T) {
 	defer app.stop()
 
 	expectMessages(t, outputTopic, 5*time.Minute, sizeProduced)
+
+	time.Sleep(5 * time.Second)
 }
 
 func expectMessages(t assert.TestingT, topic string, maxWaitForMessage time.Duration, expectedSize int) {
