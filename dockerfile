@@ -18,6 +18,8 @@ COPY internal ./internal
 
 RUN go build -tags musl -o /docker-kafka-delay-retry
 
+RUN chmod a+x /docker-kafka-delay-retry
+
 ##
 ## Deploy
 ##
@@ -31,4 +33,4 @@ EXPOSE 8080
 
 USER nonroot:nonroot
 
-ENTRYPOINT ["/kafka-delay-retry"]
+ENTRYPOINT ["/docker-kafka-delay-retry"]
