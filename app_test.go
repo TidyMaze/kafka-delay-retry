@@ -39,21 +39,7 @@ func TestApp(t *testing.T) {
 
 	ctx := context.Background()
 
-	res, err := client.CreateTopics(ctx, []kafka.TopicSpecification{
-		{Topic: inputTopic, NumPartitions: 1, ReplicationFactor: 1},
-		{Topic: outputTopic, NumPartitions: 1, ReplicationFactor: 1},
-		{Topic: inputTopic + "-retry", NumPartitions: 1, ReplicationFactor: 1},
-	})
-
-	if err != nil {
-		panic(fmt.Sprintf("Failed to create topics: %s\n", err))
-	}
-
-	for _, v := range res {
-		if v.Error.Code() != kafka.ErrNoError && v.Error.Code() != kafka.ErrTopicAlreadyExists {
-			panic(fmt.Sprintf("Failed to create topic %s: %d %s\n", v.Topic, v.Error.Code(), v.Error))
-		}
-	}
+	createTopics(ctx, client, []string{inputTopic, outputTopic, inputTopic + "-retry"})
 
 	app := NewKafkaDelayRetryApp(config)
 
@@ -84,4 +70,30 @@ func getAdminClient(bootstrapServers string) *kafka.AdminClient {
 	}
 
 	return client
+}
+
+func createTopics(ctx context.Context, client *kafka.AdminClient, topics []string) error {
+	topicSpecifications := make([]kafka.TopicSpecification, len(topics))
+
+	for i, topic := range topics {
+		topicSpecifications[i] = kafka.TopicSpecification{
+			Topic:             topic,
+			NumPartitions:     1,
+			ReplicationFactor: 1,
+		}
+	}
+
+	res, err := client.CreateTopics(ctx, topicSpecifications)
+
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create topics: %s\n", err))
+	}
+
+	for _, v := range res {
+		if v.Error.Code() != kafka.ErrNoError && v.Error.Code() != kafka.ErrTopicAlreadyExists {
+			return fmt.Errorf("Failed to create topic %s: %d %s\n", v.Topic, v.Error.Code(), v.Error)
+		}
+	}
+
+	return nil
 }
