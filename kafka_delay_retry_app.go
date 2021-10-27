@@ -14,7 +14,6 @@ type KafkaDelayRetryApp struct {
 	consumer          *kafka.Consumer
 	producer          *kafka.Producer
 	messageRepository *MessageRepository
-	cancelFn          context.CancelFunc
 }
 
 const RETRY_HEADER_KEY = "retry-duration"
@@ -111,11 +110,8 @@ func (a *KafkaDelayRetryApp) start(ctx context.Context) {
 
 	a.subscribeTopics()
 
-	ctx2, cancelFn := context.WithCancel(ctx)
-	a.cancelFn = cancelFn
-
-	go a.startExpiredMessagesPolling(ctx2)
-	go a.startConsumingMessages(ctx2)
+	go a.startExpiredMessagesPolling(ctx)
+	go a.startConsumingMessages(ctx)
 }
 
 func (a *KafkaDelayRetryApp) stop() {
