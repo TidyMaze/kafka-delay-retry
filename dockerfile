@@ -7,6 +7,8 @@ FROM golang:alpine AS build
 
 WORKDIR /app
 
+RUN apk add --no-cache gcc libc-dev librdkafka-dev
+
 COPY go.mod ./
 COPY go.sum ./
 RUN go mod download
