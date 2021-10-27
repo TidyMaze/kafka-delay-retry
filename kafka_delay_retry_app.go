@@ -81,7 +81,7 @@ func (a *KafkaDelayRetryApp) subscribeTopics() {
 	}
 }
 
-func (a *KafkaDelayRetryApp) start() {
+func (a *KafkaDelayRetryApp) start(ctx context.Context) {
 	fmt.Println("[Retry] Starting app")
 
 	newConsumer, err := kafka.NewConsumer(&kafka.ConfigMap{
@@ -111,8 +111,6 @@ func (a *KafkaDelayRetryApp) start() {
 
 	a.subscribeTopics()
 
-	ctx := context.Background()
-
 	ctx2, cancelFn := context.WithCancel(ctx)
 	a.cancelFn = cancelFn
 
@@ -121,8 +119,6 @@ func (a *KafkaDelayRetryApp) start() {
 }
 
 func (a *KafkaDelayRetryApp) stop() {
-	a.cancelFn()
-
 	fmt.Println("[Retry] Consumer cleanup")
 	err := a.consumer.Close()
 	if err != nil {
@@ -148,11 +144,13 @@ func (a *KafkaDelayRetryApp) stop() {
 
 }
 
-func NewKafkaDelayRetryApp(config KafkaDelayRetryConfig) *KafkaDelayRetryApp {
-	return &KafkaDelayRetryApp{
+func NewKafkaDelayRetryApp(ctx context.Context, config KafkaDelayRetryConfig) {
+	app := &KafkaDelayRetryApp{
 		config:            config,
 		messageRepository: SqliteMessageRepository(),
 	}
+
+	app.start(ctx)
 }
 
 func (a *KafkaDelayRetryApp) startExpiredMessagesPolling(ctx context.Context) {
@@ -162,6 +160,7 @@ func (a *KafkaDelayRetryApp) startExpiredMessagesPolling(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
+			a.stop()
 			return
 		default:
 			expiredMessages := a.messageRepository.FindAllExpired(1000)

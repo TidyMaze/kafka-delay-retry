@@ -41,9 +41,11 @@ func TestApp(t *testing.T) {
 
 	createTopics(ctx, client, []string{inputTopic, outputTopic, inputTopic + "-retry"})
 
-	app := NewKafkaDelayRetryApp(config)
+	clearTestDB()
 
-	app.messageRepository.Truncate()
+	ctxRetryApp, cancelRetryApp := context.WithCancel(ctx)
+
+	NewKafkaDelayRetryApp(ctxRetryApp, config)
 
 	test_utils.ProduceTestMessages(inputTopic, SIZE_PRODUCED)
 
@@ -53,11 +55,9 @@ func TestApp(t *testing.T) {
 
 	go StartTestApp(ctx2, inputTopic, outputTopic, config.bootstrapServers, testAppFinished)
 
-	app.start()
-
-	defer app.stop()
-
 	test_utils.ExpectMessages(t, outputTopic, 5*time.Minute, SIZE_PRODUCED)
+
+	defer cancelRetryApp()
 }
 
 func getAdminClient(bootstrapServers string) *kafka.AdminClient {
@@ -96,4 +96,9 @@ func createTopics(ctx context.Context, client *kafka.AdminClient, topics []strin
 	}
 
 	return nil
+}
+
+func clearTestDB() {
+	repo := SqliteMessageRepository()
+	repo.Truncate()
 }

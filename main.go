@@ -1,5 +1,7 @@
 package kafka_delay_retry
 
+import "context"
+
 func main() {
 	app := KafkaDelayRetryApp{
 		config: KafkaDelayRetryConfig{
@@ -7,5 +9,12 @@ func main() {
 			bootstrapServers: "localhost:9092",
 		},
 	}
-	app.start()
+
+	ctx := context.Background()
+
+	appCtx, cancel := context.WithCancel(ctx)
+
+	defer cancel()
+
+	app.start(appCtx)
 }
