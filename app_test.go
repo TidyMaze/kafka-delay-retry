@@ -44,7 +44,6 @@ func TestApp(t *testing.T) {
 	clearTestDB()
 
 	ctxRetryApp, cancelRetryApp := context.WithCancel(ctx)
-
 	NewKafkaDelayRetryApp(ctxRetryApp, config)
 	defer cancelRetryApp()
 
