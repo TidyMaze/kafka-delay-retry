@@ -8,3 +8,9 @@ test:
 
 build-run:
 	go install && kafka-delay-retry
+
+build-docker:
+	docker build -t docker-kafka-delay-retry:multistage .
+
+run-docker:
+	docker run --name kafka-delay-retry --rm docker-kafka-delay-retry:multistage
