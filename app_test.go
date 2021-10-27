@@ -101,4 +101,10 @@ func createTopics(ctx context.Context, client *kafka.AdminClient, topics []strin
 func clearTestDB() {
 	repo := SqliteMessageRepository()
 	repo.Truncate()
+	db, _ := repo.db.DB()
+	closeError := db.Close()
+
+	if closeError != nil {
+		panic(fmt.Sprintf("Failed to close db: %s\n", closeError))
+	}
 }
