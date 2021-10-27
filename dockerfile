@@ -12,6 +12,7 @@ COPY go.sum ./
 RUN go mod download
 
 COPY *.go ./
+COPY internal ./internal
 
 RUN go build -o /docker-kafka-delay-retry
 
