@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/TidyMaze/kafka-delay-retry/internal"
-	"github.com/TidyMaze/kafka-delay-retry/test_utils"
+	"github.com/TidyMaze/kafka-delay-retry/test/test_utils"
 	"go.uber.org/goleak"
 )
 
