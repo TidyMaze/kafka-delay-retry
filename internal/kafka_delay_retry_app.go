@@ -1,4 +1,4 @@
-package kafka_delay_retry
+package internal
 
 import (
 	"context"
@@ -74,7 +74,7 @@ func (a *KafkaDelayRetryApp) startConsumingMessages(ctx context.Context) {
 }
 
 func (a *KafkaDelayRetryApp) subscribeTopics() {
-	err := a.consumer.SubscribeTopics([]string{a.config.inputTopic}, nil)
+	err := a.consumer.SubscribeTopics([]string{a.config.InputTopic}, nil)
 	if err != nil {
 		panic(fmt.Sprintf("[Retry] Failed to subscribe to topic: %s\n", err))
 	}
@@ -84,7 +84,7 @@ func (a *KafkaDelayRetryApp) start(ctx context.Context) {
 	fmt.Println("[Retry] Starting app")
 
 	newConsumer, err := kafka.NewConsumer(&kafka.ConfigMap{
-		"bootstrap.servers":  a.config.bootstrapServers,
+		"bootstrap.servers":  a.config.BootstrapServers,
 		"group.id":           APP_NAME,
 		"client.id":          APP_NAME,
 		"auto.offset.reset":  "earliest",
@@ -98,7 +98,7 @@ func (a *KafkaDelayRetryApp) start(ctx context.Context) {
 	a.consumer = newConsumer
 
 	newProducer, err := kafka.NewProducer(&kafka.ConfigMap{
-		"bootstrap.servers": a.config.bootstrapServers,
+		"bootstrap.servers": a.config.BootstrapServers,
 		"client.id":         APP_NAME,
 	})
 
@@ -127,7 +127,7 @@ func (a *KafkaDelayRetryApp) stop() {
 		panic(fmt.Sprintf("[Retry] Error closing producer: %v", err))
 	}
 
-	innerDb, err := a.messageRepository.db.DB()
+	innerDb, err := a.messageRepository.Db.DB()
 	if err != nil {
 		panic(fmt.Sprintf("[Retry] Error closing inner db: %v", err))
 	}

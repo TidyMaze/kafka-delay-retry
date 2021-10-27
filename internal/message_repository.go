@@ -1,4 +1,4 @@
-package kafka_delay_retry
+package internal
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 )
 
 type MessageRepository struct {
-	db *gorm.DB
+	Db *gorm.DB
 }
 
 func SqliteMessageRepository() *MessageRepository {
@@ -28,7 +28,7 @@ func NewMessageRepository(dialector gorm.Dialector) *MessageRepository {
 	}
 
 	mr := &MessageRepository{
-		db: db,
+		Db: db,
 	}
 
 	mr.migrate()
@@ -37,7 +37,7 @@ func NewMessageRepository(dialector gorm.Dialector) *MessageRepository {
 }
 
 func (mr *MessageRepository) migrate() {
-	err := mr.db.AutoMigrate(&StoredMessage{})
+	err := mr.Db.AutoMigrate(&StoredMessage{})
 	if err != nil {
 		panic(fmt.Sprintf("Error auto-migrating: %v", err))
 	}
@@ -46,14 +46,14 @@ func (mr *MessageRepository) migrate() {
 // truncate db table
 func (mr *MessageRepository) Truncate() {
 	// Cleanup before running app
-	err := mr.db.Exec("DELETE FROM stored_messages").Error
+	err := mr.Db.Exec("DELETE FROM stored_messages").Error
 	if err != nil {
 		panic(fmt.Sprintf("Error cleaning up: %v", err))
 	}
 }
 
 func (mr *MessageRepository) Create(message *StoredMessage) {
-	err := mr.db.Create(message).Error
+	err := mr.Db.Create(message).Error
 	if err != nil {
 		panic(fmt.Sprintf("Error saving message: %v", err))
 	}
@@ -61,7 +61,7 @@ func (mr *MessageRepository) Create(message *StoredMessage) {
 
 func (mr *MessageRepository) FindById(id int) StoredMessage {
 	var msg StoredMessage
-	err := mr.db.First(&msg, id).Error
+	err := mr.Db.First(&msg, id).Error
 	if err != nil {
 		panic(fmt.Sprintf("Error finding message: %v", err))
 	}
@@ -71,7 +71,7 @@ func (mr *MessageRepository) FindById(id int) StoredMessage {
 // find all stored messages who WaitUntil is less than or equal to now
 func (mr *MessageRepository) FindAllExpired(limit int) []StoredMessage {
 	var msgs []StoredMessage
-	err := mr.db.Where("wait_until <= ?", time.Now()).Order("wait_until ASC").Limit(limit).Find(&msgs).Error
+	err := mr.Db.Where("wait_until <= ?", time.Now()).Order("wait_until ASC").Limit(limit).Find(&msgs).Error
 	if err != nil {
 		panic(fmt.Sprintf("Error finding messages: %v", err))
 	}
@@ -80,7 +80,7 @@ func (mr *MessageRepository) FindAllExpired(limit int) []StoredMessage {
 
 // delete a stored message
 func (mr *MessageRepository) Delete(msg StoredMessage) {
-	err := mr.db.Delete(&msg).Error
+	err := mr.Db.Delete(&msg).Error
 	if err != nil {
 		panic(fmt.Sprintf("Error deleting message: %v", err))
 	}

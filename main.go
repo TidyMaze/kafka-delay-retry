@@ -1,20 +1,20 @@
 package kafka_delay_retry
 
-import "context"
+import (
+	"context"
+
+	"github.com/TidyMaze/kafka-delay-retry/internal"
+)
 
 func main() {
-	app := KafkaDelayRetryApp{
-		config: KafkaDelayRetryConfig{
-			inputTopic:       "^.*-retry",
-			bootstrapServers: "localhost:9092",
-		},
-	}
-
 	ctx := context.Background()
 
 	appCtx, cancel := context.WithCancel(ctx)
 
-	defer cancel()
+	internal.NewKafkaDelayRetryApp(appCtx, internal.KafkaDelayRetryConfig{
+		InputTopic:       "^.*-retry",
+		BootstrapServers: "localhost:9092",
+	})
 
-	app.start(appCtx)
+	defer cancel()
 }

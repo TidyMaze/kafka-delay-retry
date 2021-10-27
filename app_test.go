@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/TidyMaze/kafka-delay-retry/internal"
 	"github.com/TidyMaze/kafka-delay-retry/test_utils"
 	"go.uber.org/goleak"
 )
@@ -29,35 +30,35 @@ func TestApp(t *testing.T) {
 	retryTopic := "^.*-retry"
 	outputTopic := "test-app-output-topic"
 
-	config := KafkaDelayRetryConfig{
-		inputTopic:       retryTopic,
-		bootstrapServers: "localhost:29092",
+	config := internal.KafkaDelayRetryConfig{
+		InputTopic:       retryTopic,
+		BootstrapServers: "localhost:29092",
 	}
 
 	ctx := context.Background()
 
-	client := getAdminClient(config.bootstrapServers)
+	client := getAdminClient(config.BootstrapServers)
 	createTopics(ctx, client, []string{inputTopic, outputTopic, inputTopic + "-retry"}, 1, 1)
 
 	clearTestDB()
 
 	ctxRetryApp, cancelRetryApp := context.WithCancel(ctx)
-	NewKafkaDelayRetryApp(ctxRetryApp, config)
+	internal.NewKafkaDelayRetryApp(ctxRetryApp, config)
 	defer cancelRetryApp()
 
 	test_utils.ProduceTestMessages(inputTopic, SIZE_PRODUCED)
 
 	ctxTestApp, cancelTestApp := context.WithCancel(ctx)
-	go StartTestApp(ctxTestApp, inputTopic, outputTopic, config.bootstrapServers, testAppFinished)
+	go StartTestApp(ctxTestApp, inputTopic, outputTopic, config.BootstrapServers, testAppFinished)
 	defer cancelTestApp()
 
 	test_utils.ExpectMessages(t, outputTopic, 5*time.Minute, SIZE_PRODUCED)
 }
 
 func clearTestDB() {
-	repo := SqliteMessageRepository()
+	repo := internal.SqliteMessageRepository()
 	repo.Truncate()
-	db, _ := repo.db.DB()
+	db, _ := repo.Db.DB()
 	closeError := db.Close()
 
 	if closeError != nil {
