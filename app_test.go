@@ -32,13 +32,7 @@ func TestApp(t *testing.T) {
 		bootstrapServers: "localhost:29092",
 	}
 
-	conf := kafka.ConfigMap{"bootstrap.servers": config.bootstrapServers}
-
-	client, err := kafka.NewAdminClient(&conf)
-
-	if err != nil {
-		panic(fmt.Sprintf("Failed to create client: %v\n", err))
-	}
+	client := getAdminClient(config.bootstrapServers)
 
 	ctx := context.Background()
 
@@ -77,4 +71,16 @@ func TestApp(t *testing.T) {
 	defer app.stop()
 
 	test_utils.ExpectMessages(t, outputTopic, 5*time.Minute, sizeProduced)
+}
+
+func getAdminClient(bootstrapServers string) *kafka.AdminClient {
+	conf := kafka.ConfigMap{"bootstrap.servers": bootstrapServers}
+
+	client, err := kafka.NewAdminClient(&conf)
+
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create client: %v\n", err))
+	}
+
+	return client
 }
