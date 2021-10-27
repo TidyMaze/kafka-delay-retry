@@ -34,10 +34,9 @@ func TestApp(t *testing.T) {
 		bootstrapServers: "localhost:29092",
 	}
 
-	client := getAdminClient(config.bootstrapServers)
-
 	ctx := context.Background()
 
+	client := getAdminClient(config.bootstrapServers)
 	createTopics(ctx, client, []string{inputTopic, outputTopic, inputTopic + "-retry"}, 1, 1)
 
 	clearTestDB()
