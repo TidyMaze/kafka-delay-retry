@@ -52,9 +52,8 @@ func TestApp(t *testing.T) {
 
 	ctxTestApp, cancelTestApp := context.WithCancel(ctx)
 
-	defer cancelTestApp()
-
 	go StartTestApp(ctxTestApp, inputTopic, outputTopic, config.bootstrapServers, testAppFinished)
+	defer cancelTestApp()
 
 	test_utils.ExpectMessages(t, outputTopic, 5*time.Minute, SIZE_PRODUCED)
 }
