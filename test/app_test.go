@@ -37,8 +37,8 @@ func TestApp(t *testing.T) {
 
 	ctx := context.Background()
 
-	client := getAdminClient(config.BootstrapServers)
-	createTopics(ctx, client, []string{inputTopic, outputTopic, inputTopic + "-retry"}, 1, 1)
+	client := internal.getAdminClient(config.BootstrapServers)
+	internal.createTopics(ctx, client, []string{inputTopic, outputTopic, inputTopic + "-retry"}, 1, 1)
 
 	clearTestDB()
 
