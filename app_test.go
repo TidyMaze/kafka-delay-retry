@@ -49,11 +49,11 @@ func TestApp(t *testing.T) {
 
 	test_utils.ProduceTestMessages(inputTopic, SIZE_PRODUCED)
 
-	ctx2, cancelFn := context.WithCancel(ctx)
+	ctxTestApp, cancelTestApp := context.WithCancel(ctx)
 
-	defer cancelFn()
+	defer cancelTestApp()
 
-	go StartTestApp(ctx2, inputTopic, outputTopic, config.bootstrapServers, testAppFinished)
+	go StartTestApp(ctxTestApp, inputTopic, outputTopic, config.bootstrapServers, testAppFinished)
 
 	test_utils.ExpectMessages(t, outputTopic, 5*time.Minute, SIZE_PRODUCED)
 
