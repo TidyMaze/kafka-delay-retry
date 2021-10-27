@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/TidyMaze/kafka-delay-retry/test_utils"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"go.uber.org/goleak"
 )
 
@@ -54,18 +53,6 @@ func TestApp(t *testing.T) {
 	defer cancelTestApp()
 
 	test_utils.ExpectMessages(t, outputTopic, 5*time.Minute, SIZE_PRODUCED)
-}
-
-func getAdminClient(bootstrapServers string) *kafka.AdminClient {
-	conf := kafka.ConfigMap{"bootstrap.servers": bootstrapServers}
-
-	client, err := kafka.NewAdminClient(&conf)
-
-	if err != nil {
-		panic(fmt.Sprintf("Failed to create client: %v\n", err))
-	}
-
-	return client
 }
 
 func clearTestDB() {

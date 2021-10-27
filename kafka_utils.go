@@ -32,3 +32,15 @@ func createTopics(ctx context.Context, client *kafka.AdminClient, topics []strin
 
 	return nil
 }
+
+func getAdminClient(bootstrapServers string) *kafka.AdminClient {
+	conf := kafka.ConfigMap{"bootstrap.servers": bootstrapServers}
+
+	client, err := kafka.NewAdminClient(&conf)
+
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create client: %v\n", err))
+	}
+
+	return client
+}
