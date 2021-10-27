@@ -7,7 +7,7 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
-func createTopics(ctx context.Context, client *kafka.AdminClient, topics []string, numPartitions int, replicationFactor int) error {
+func CreateTopics(ctx context.Context, client *kafka.AdminClient, topics []string, numPartitions int, replicationFactor int) error {
 	topicSpecifications := make([]kafka.TopicSpecification, len(topics))
 
 	for i, topic := range topics {
@@ -33,7 +33,7 @@ func createTopics(ctx context.Context, client *kafka.AdminClient, topics []strin
 	return nil
 }
 
-func getAdminClient(bootstrapServers string) *kafka.AdminClient {
+func GetAdminClient(bootstrapServers string) *kafka.AdminClient {
 	conf := kafka.ConfigMap{"bootstrap.servers": bootstrapServers}
 
 	client, err := kafka.NewAdminClient(&conf)
