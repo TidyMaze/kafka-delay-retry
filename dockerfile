@@ -3,11 +3,9 @@
 ##
 ## Build
 ##
-FROM golang:alpine AS build
+FROM golang:1.17.2-bullseye AS build
 
 WORKDIR /app
-
-RUN apk add --no-cache gcc libc-dev librdkafka-dev
 
 COPY go.mod ./
 COPY go.sum ./
@@ -16,7 +14,7 @@ RUN go mod download
 COPY *.go ./
 COPY internal ./internal
 
-RUN go build -tags musl -o /docker-kafka-delay-retry
+RUN go build -o /docker-kafka-delay-retry
 
 RUN chmod a+x /docker-kafka-delay-retry
 
