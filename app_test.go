@@ -11,8 +11,11 @@ import (
 	"go.uber.org/goleak"
 )
 
+const SIZE_PRODUCED int = 500
+
 // testing main app
 func TestApp(t *testing.T) {
+
 	defer goleak.VerifyNone(t)
 
 	testAppFinished := make(chan bool)
@@ -56,9 +59,7 @@ func TestApp(t *testing.T) {
 
 	app.messageRepository.Truncate()
 
-	sizeProduced := 500
-
-	test_utils.ProduceTestMessages(inputTopic, sizeProduced)
+	test_utils.ProduceTestMessages(inputTopic, SIZE_PRODUCED)
 
 	ctx2, cancelFn := context.WithCancel(ctx)
 
@@ -70,7 +71,7 @@ func TestApp(t *testing.T) {
 
 	defer app.stop()
 
-	test_utils.ExpectMessages(t, outputTopic, 5*time.Minute, sizeProduced)
+	test_utils.ExpectMessages(t, outputTopic, 5*time.Minute, SIZE_PRODUCED)
 }
 
 func getAdminClient(bootstrapServers string) *kafka.AdminClient {
