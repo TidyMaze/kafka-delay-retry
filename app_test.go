@@ -50,7 +50,6 @@ func TestApp(t *testing.T) {
 	test_utils.ProduceTestMessages(inputTopic, SIZE_PRODUCED)
 
 	ctxTestApp, cancelTestApp := context.WithCancel(ctx)
-
 	go StartTestApp(ctxTestApp, inputTopic, outputTopic, config.bootstrapServers, testAppFinished)
 	defer cancelTestApp()
 
