@@ -55,7 +55,7 @@ func ExpectMessages(t assert.TestingT, topic string, maxWaitForMessage time.Dura
 	}
 
 	defer func() {
-		fmt.Println("readMessages cleanup")
+		fmt.Println("[readMessages] cleanup")
 		c.Close()
 	}()
 

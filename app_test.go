@@ -68,10 +68,7 @@ func TestApp(t *testing.T) {
 
 	ctx2, cancelFn := context.WithCancel(ctx)
 
-	defer func() {
-		fmt.Println("cancelFn cleanup")
-		cancelFn()
-	}()
+	defer cancelFn()
 
 	go StartTestApp(ctx2, inputTopic, outputTopic, config.bootstrapServers, testAppFinished)
 
