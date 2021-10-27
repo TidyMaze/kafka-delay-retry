@@ -46,6 +46,7 @@ func TestApp(t *testing.T) {
 	ctxRetryApp, cancelRetryApp := context.WithCancel(ctx)
 
 	NewKafkaDelayRetryApp(ctxRetryApp, config)
+	defer cancelRetryApp()
 
 	test_utils.ProduceTestMessages(inputTopic, SIZE_PRODUCED)
 
@@ -56,8 +57,6 @@ func TestApp(t *testing.T) {
 	go StartTestApp(ctxTestApp, inputTopic, outputTopic, config.bootstrapServers, testAppFinished)
 
 	test_utils.ExpectMessages(t, outputTopic, 5*time.Minute, SIZE_PRODUCED)
-
-	defer cancelRetryApp()
 }
 
 func getAdminClient(bootstrapServers string) *kafka.AdminClient {
