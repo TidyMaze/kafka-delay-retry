@@ -4,7 +4,7 @@ start-deps:
 	docker-compose up -d
 
 test:
-	go test ./test -v -timeout 5m 
+	go test -v ./test -timeout 5m 
 
 build-run:
 	go install && kafka-delay-retry
