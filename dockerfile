@@ -1,10 +1,10 @@
 # syntax=docker/dockerfile:1
 
-FROM golang:alpine AS build
+FROM golang:alpine
 
 WORKDIR /app
 
-RUN apk add --no-cache gcc libc-dev librdkafka-dev
+RUN apk add --no-cache gcc libc-dev librdkafka-dev musl-dev
 
 COPY go.mod ./
 COPY go.sum ./
