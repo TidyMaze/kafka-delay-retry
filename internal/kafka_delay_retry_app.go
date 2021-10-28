@@ -19,6 +19,16 @@ type KafkaDelayRetryApp struct {
 const RETRY_HEADER_KEY = "retry-duration"
 const APP_NAME = "kafka-delay-retry"
 
+func IncreaseRetryDuration(waitDuration time.Duration) time.Duration {
+	maxRetryDuration := time.Duration(24) * time.Hour
+
+	res := waitDuration * 2
+	if res > time.Duration(maxRetryDuration) {
+		return time.Duration(maxRetryDuration)
+	}
+	return res
+}
+
 func (a *KafkaDelayRetryApp) startConsumingMessages(ctx context.Context) {
 	fmt.Println("[Retry] Starting consumer")
 	defer func() {
@@ -44,7 +54,7 @@ func (a *KafkaDelayRetryApp) startConsumingMessages(ctx context.Context) {
 					for _, header := range msg.Headers {
 						if string(header.Key) == RETRY_HEADER_KEY {
 							intDuration, _ := strconv.Atoi(string(header.Value))
-							waitDuration = time.Duration(intDuration) * 2 * time.Millisecond
+							waitDuration = IncreaseRetryDuration(time.Duration(intDuration) * time.Millisecond)
 							break
 						}
 					}
