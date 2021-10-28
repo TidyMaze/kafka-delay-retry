@@ -15,8 +15,9 @@ COPY . .
 
 RUN ls -rla
 
-RUN CGO_ENABLED=1 go build -work -o /docker-kafka-delay-retry
+RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -work -o /docker-kafka-delay-retry
 
 RUN chmod a+rx /docker-kafka-delay-retry
 
+ENTRYPOINT ["bash", "-c"]
 CMD ["/docker-kafka-delay-retry"]
