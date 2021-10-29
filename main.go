@@ -1,4 +1,4 @@
-package kafka_delay_retry
+package main
 
 import (
 	"context"
